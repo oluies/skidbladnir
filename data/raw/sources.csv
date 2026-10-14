@@ -1,0 +1,30 @@
+source_id,citation,venue,year,url,source_kind
+S01,"Goebel, D. M., and Katz, I., Fundamentals of Electric Propulsion: Ion and Hall Thrusters, Chapter 9: Flight Ion and Hall Thrusters","JPL Space Science and Technology Series",2008,https://descanso.jpl.nasa.gov/SciTechBook/series1/Goebel_09_Chap9_Flight.pdf,book_chapter
+S02,"Performance Evaluation of the Prototype Model NEXT Ion Thruster","NASA Glenn Research Center, NTRS 20080012739",2008,https://ntrs.nasa.gov/api/citations/20080012739/downloads/20080012739.pdf,technical_report
+S03,"Brophy, J. R., NASA's Deep Space 1 Ion Engine","Review of Scientific Instruments 73, 1071-1078",2002,,journal
+S04,"The High Power Electric Propulsion (HiPEP) Ion Thruster","NASA Glenn Research Center, NTRS 20040139476",2004,https://ntrs.nasa.gov/api/citations/20040139476/downloads/20040139476.pdf,technical_report
+S05,"Polk, J. E., et al., Performance and Wear Test Results for a 20-kW Class Ion Engine with Carbon-Carbon Grids","AIAA-2005-4393, 41st Joint Propulsion Conference",2005,,conference
+S06,"12-kW Advanced Electric Propulsion System Hall Current Thruster Qualification and Production Status","IEPC-2024, NTRS 20240006249",2024,https://ntrs.nasa.gov/api/citations/20240006249/downloads/AEPS%20Status%20IEPC%202024%20v7.pdf,conference
+S07,"Completing the Development of the 12.5 kW Hall Effect Rocket with Magnetic Shielding (HERMeS)","IEPC-2019-193, 36th International Electric Propulsion Conference",2019,https://electricrocket.org/2019/193.pdf,conference
+S08,"Performance and High-Speed Characterization of a 100-kW Nested Hall Thruster","Journal of Propulsion and Power, AIAA 10.2514/1.B38080; NTRS 20210013351",2021,https://ntrs.nasa.gov/api/citations/20210013351/downloads/2020-04-B38080.R2_Final.pdf,journal
+S09,"Electric Propulsion for the Psyche Mission","IEPC-2019-244, 36th International Electric Propulsion Conference",2019,https://electricrocket.org/2019/244.pdf,conference
+S10,"Review of High-Power Electrostatic and Electrothermal Electric Propulsion","Journal of Propulsion and Power",2022,https://hpepl.ae.gatech.edu/sites/default/files/files/Review%20of%20HP%20ES%20ET%20EP_JPP%20Nov%202022.pdf,journal
+S11,"Rafalskyi, D., et al., In-orbit demonstration of an iodine electric propulsion system","Nature 599; DOI 10.1038/s41586-021-04015-y",2021,https://www.nature.com/articles/s41586-021-04015-y,journal
+S12,"Measurements of a Krypton Fed 1.5 kW Hall Effect Thruster","IEPC-2017-26, 35th International Electric Propulsion Conference",2017,https://electricrocket.org/IEPC/IEPC_2017_26.pdf,conference
+S13,"Applied-Field Magnetoplasmadynamic Thrusters for Deep Space Exploration","arXiv:2410.17478",2024,https://arxiv.org/pdf/2410.17478,preprint
+S14,"Polk, J. E., et al., Development of High Power Lithium Magnetoplasmadynamic Thrusters for Human Mars Missions","IEPC-2024, Princeton EPPDyL",2024,https://alfven.princeton.edu/publications/pdf/polk-iepc-2024.pdf,conference
+S15,"Improved Efficiency and Throttling Range of the VX-200 Magnetoplasma Thruster","Journal of Propulsion and Power",2014,https://www.adastrarocket.com/technical-papers-archives/Ben-JPP-2014.pdf,journal
+S16,"Steady-State Testing in the VASIMR VX-200SS Project","AIAA ASCEND",2021,https://www.adastrarocket.com/wp-content/uploads/2021/12/2021_AIAA_ASCEND_VASIMR.pdf,conference
+S17,"Finseth, J. L., Rover Nuclear Rocket Engine Program: Overview of Rover Engine Tests, Final Report","NASA CR-184270, Sverdrup Technology; NTRS 19920005899",1991,https://ntrs.nasa.gov/citations/19920005899,technical_report
+S18,"National Academies of Sciences, Engineering, and Medicine, Space Nuclear Propulsion for Human Mars Exploration","The National Academies Press; DOI 10.17226/25977",2021,https://nap.nationalacademies.org/read/25977,study_report
+S19,"KRUSTY Reactor Design","Nuclear Technology; DOI 10.1080/00295450.2020.1725382; NTRS 20205009350",2020,https://ntrs.nasa.gov/api/citations/20205009350/downloads/03-KRUSTY%20Reactor%20Design.pdf,journal
+S20,"Nuclear Electric Propulsion for Human Mars Exploration","IEPC-2022-155, NTRS 20220009379",2022,https://ntrs.nasa.gov/api/citations/20220009379/downloads/SNP%20NEP%20paper%20-%20IEPC-2022-155%20final.pdf,conference
+S21,"Achieving Zero Boiloff for LH2 Supply Tanks on an NTP Rocket to Mars","AIAA 2026-2384",2026,https://arc.aiaa.org/doi/10.2514/6.2026-2384,conference
+S22,"Safe, Affordable, Nuclear Thermal Propulsion Systems","NASA, NTRS 20140010981",2014,https://ntrs.nasa.gov/api/citations/20140010981/downloads/20140010981.pdf,technical_report
+S23,"Kuninaka, H., et al., Asteroid Rendezvous of Hayabusa Explorer Using Microwave Discharge Ion Engines","IEPC-2005-010, 29th International Electric Propulsion Conference",2005,,conference
+S24,"Killinger, R., Bassner, H., Leiter, H., and Kukies, R., RITA Ion Propulsion for Artemis","AIAA-2001-3490, 37th Joint Propulsion Conference",2001,,conference
+S25,"DRACO cancellation and the FY2026 NASA budget request technical supplement","Nuclear Engineering International; Breaking Defense",2025,https://www.neimagazine.com/news/draco-project-cancelled/,news
+S26,"Hutchins, M., and Simpson, H., QinetiQ's T6 and T5 Ion Thruster Electric Propulsion System Architectures and Performances","International Electric Propulsion Conference",2015,https://www.semanticscholar.org/paper/493bfc9382080d253e5a6af5a178e21681d302bf,conference
+S27,"ThrustMe NPT30-I2-1U product datasheet","ThrustMe, Verrieres-le-Buisson",2021,https://www.thrustme.fr/base/stock/ProductBannerFiles/2_thrustme-npt30-i2.pdf,datasheet
+S28,"NSTAR Ion Thruster project page","NASA Glenn Research Center",2000,https://www.grc.nasa.gov/WWW/ion/past/90s/nstar.htm,web_technical
+S29,"Standard atomic weights and first ionisation energies","NIST Atomic Spectra Database and CRC Handbook of Chemistry and Physics",2024,https://physics.nist.gov/asd,reference_data
