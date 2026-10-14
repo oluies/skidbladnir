@@ -1,0 +1,23 @@
+# DuckDB database is a build artifact, rebuilt from data/raw/*.csv + sql/schema.sql
+data/*.duckdb
+data/*.duckdb.wal
+
+# Julia
+julia/**/Manifest.toml
+*.jl.cov
+*.jl.mem
+
+# Scala / Mill
+out/
+.bloop/
+.metals/
+.bsp/
+
+# Lean
+lean/.lake/
+lean/lake-packages/
+
+# Plots output is regenerated
+docs/figures/*.png
+
+.DS_Store
