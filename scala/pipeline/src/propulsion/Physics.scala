@@ -13,19 +13,19 @@ object Physics {
   /** Standard gravity, the constant that defines specific impulse in seconds. */
   val g0: Double = 9.80665
 
-  /** Exhaust velocity from specific impulse. Lean: `exhaustVelocity_def`. */
+  /** Exhaust velocity from specific impulse. Lean: `Propulsion.exhaustVelocity`. */
   def exhaustVelocity(ispSeconds: Double): Double = g0 * ispSeconds
 
   /** Specific impulse from exhaust velocity, the inverse of [[exhaustVelocity]]. */
   def specificImpulse(exhaustVelocity: Double): Double = exhaustVelocity / g0
 
-  /** Tsiolkovsky mass ratio m0/mf = exp(dv / ve). Lean: `massRatio_def`. */
+  /** Tsiolkovsky mass ratio m0/mf = exp(dv / ve). Lean: `Propulsion.massRatio`, `one_lt_massRatio`. */
   def massRatio(deltaV: Double, exhaustVelocity: Double): Double =
     math.exp(deltaV / exhaustVelocity)
 
   /** Propellant mass fraction mp/m0 = 1 - exp(-dv/ve), equal to 1 - 1/MR.
     *
-    * Lean: `propellantMassFraction_def` and `propellantMassFraction_lt_one`, which is the
+    * Lean: `Propulsion.propellantMassFraction` and `propellantMassFraction_mem_Ico`, which is the
     * inequality the comparison uses: the fraction is strictly below 1 for any finite delta-v,
     * so a finite initial mass always exists.
     */
@@ -42,7 +42,7 @@ object Physics {
 
   /** Electrical input power for a given thrust, from P = T * ve / (2 * eta).
     *
-    * Lean: `power_thrust_isp`. This is the relation that ties the three quoted numbers on a
+    * Lean: `Propulsion.power_thrust_isp`. This is the relation that ties the three quoted numbers on a
     * thruster datasheet together, and the one v_thruster_consistency checks in SQL.
     */
   def inputPower(thrustN: Double, exhaustVelocity: Double, efficiency: Double): Double =
@@ -59,7 +59,7 @@ object Physics {
     *
     * This is the burn duration, not a trajectory solution. It is a lower bound on trip time
     * for a continuously thrusting transfer and is used here as the comparison metric.
-    * Lean: `transferTime_def`.
+    * Lean: `Propulsion.transferTime` and `transferTime_eq_propellantMass_div_massFlow`.
     */
   def transferTimeSeconds(
       propellantMassKg: Double,

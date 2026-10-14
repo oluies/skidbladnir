@@ -78,3 +78,21 @@
   specific impulse against trip time trade. Bars are linear, not logarithmic, because a bar
   starts at zero. Nuclear thermal rows are absent from the trip-time figure by construction.
 - Figures are committed rather than ignored, because docs/findings.md refers to them.
+
+### Task 5: Lean formalisation
+- Added lean/Propulsion/Basic.lean on Lean 4 v4.35.0 with Mathlib pinned to the matching tag.
+- 11 definitions and 21 theorems, all proved, no sorry anywhere.
+- Definitions: g0, exhaustVelocity, specificImpulse, massRatio, propellantMassFraction,
+  initialMass, propellantMass, inputPower, thrustFromPower, massFlow, transferTime.
+- The headline result is propellantMassFraction_mem_Ico: for non-negative delta-v and
+  positive exhaust velocity the propellant mass fraction lies in [0, 1), with the upper
+  bound strict. That strictness is what guarantees a finite initial mass for any mission.
+- propellantMassFraction_lt_one needs no hypotheses at all, because exp is positive
+  everywhere. The real content of the comparison's feasibility test is therefore the
+  trip-time constraint, not the mass bound.
+- propellantMassFraction_lt_of_isp_lt is the fact that justifies ranking candidates by
+  specific impulse: raising Isp strictly lowers the propellant mass fraction.
+- power_thrust_isp states the identity that v_thruster_consistency checks in SQL.
+- lean/check_axioms.lean reports the axiom dependencies of all 21 theorems. Each depends on
+  exactly [propext, Classical.choice, Quot.sound] and none on sorryAx.
+- Comments in Physics.scala now cite the Lean declaration names that actually exist.
