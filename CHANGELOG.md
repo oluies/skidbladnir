@@ -96,3 +96,31 @@
 - lean/check_axioms.lean reports the axiom dependencies of all 21 theorems. Each depends on
   exactly [propext, Classical.choice, Quot.sound] and none on sorryAx.
 - Comments in Physics.scala now cite the Lean declaration names that actually exist.
+
+### Task 6: findings
+- Added docs/findings.md with results queried from DuckDB, ranked candidates for all four
+  missions, cross-implementation agreement, a sensitivity study and the three unknowns.
+- Added scripts/sensitivity.jl, which recomputes the rankings with the two unmeasured mass
+  assumptions varied by a factor of two in each direction. Nothing it computes is written
+  to the database.
+- Exported alpha_for_source from the Julia module so the sensitivity script can reach it.
+- Results. The probe answer is stable: high-Isp gridded ion thrusters take the top five
+  places at both delta-v levels and the ordering survives every sensitivity case. NEXT or T6
+  is the defensible pick, since HiPEP ranks first but was cancelled in 2005 and has no
+  flight heritage.
+- The crewed Mars answer is not stable. At 2 MWe and 20 kg/kW the power plant and payload
+  fix 130 t of the vehicle before a thruster is chosen, the whole feasible set spans a
+  factor of 1.76, and doubling the specific-mass assumption removes the top-ranked candidate
+  from the feasible set altogether.
+- On the fast Mars mission every gridded ion thruster, every MPD thruster and VASIMR fail,
+  all on time rather than mass, because power-limited thrusting time grows with the square
+  of exhaust velocity at fixed power.
+- The third unknown inverts the recommendation. The candidates that look best on mass need
+  2200 to 3400 kg of propellant throughput per unit, against the single in-flight figure in
+  the dataset of 82 kg for the PPS-1350-G.
+
+### Verification
+Full rebuild from a clean database passes end to end: schema loads, 26 Scala self-tests
+pass, validation reports 0 errors over 17 checks, both pipelines write 104 rows with 86
+feasible, 878 Julia tests pass including agreement with the Scala rows to 1e-9 relative,
+four figures render, Lean builds and all 21 theorems report only the three standard axioms.

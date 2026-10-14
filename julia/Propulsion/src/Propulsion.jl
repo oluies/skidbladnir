@@ -35,6 +35,7 @@ export g0,
     DELTA_V_BUDGETS,
     POWER_PLANT_ALPHA_KG_PER_KW,
     DEFAULT_ALPHA_KG_PER_KW,
+    alpha_for_source,
     THRUSTER_SPECIFIC_MASS_KG_PER_KW,
     MAX_MASS_RATIO,
     database_path,
@@ -214,7 +215,8 @@ load_propellants(con) = query(con, "SELECT * FROM propellants ORDER BY propellan
 
 ismiss(x) = x === missing || (x isa Real && !isfinite(x))
 
-alpha_for(power_source) =
+"Power plant specific mass for a mission's power source."
+alpha_for_source(power_source) =
     ismiss(power_source) ? DEFAULT_ALPHA_KG_PER_KW :
     get(POWER_PLANT_ALPHA_KG_PER_KW, power_source, DEFAULT_ALPHA_KG_PER_KW)
 
@@ -251,7 +253,7 @@ function compare_one(mission, thruster)
         unit_mass =
             ismiss(thruster.mass_kg) ?
             THRUSTER_SPECIFIC_MASS_KG_PER_KW * p_thruster / 1000 : thruster.mass_kg
-        alpha = alpha_for(mission.power_source)
+        alpha = alpha_for_source(mission.power_source)
         power_plant_mass = alpha * p_avail / 1000
         inert_mass = mission.payload_mass_kg + power_plant_mass + n * unit_mass
         m0 = inert_mass * mr
