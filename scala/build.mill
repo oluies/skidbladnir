@@ -1,0 +1,30 @@
+//| mill-version: 1.1.10
+
+package build
+
+import mill._
+import mill.scalalib._
+
+/** Ingestion, validation and the comparison pipeline over data/propulsion.duckdb.
+  *
+  * Dependencies are limited to the Scala standard library and the DuckDB JDBC driver.
+  * There is deliberately no test framework: `propulsion.Verify` runs assertion-based checks
+  * from a main class so the module stays inside that dependency budget.
+  *
+  * Run from this directory:
+  *     mill pipeline.runMain propulsion.Main validate
+  *     mill pipeline.runMain propulsion.Main compare
+  *     mill pipeline.runMain propulsion.Main report
+  *     mill pipeline.runMain propulsion.Verify
+  *
+  * The database is located by walking up from the working directory looking for
+  * data/propulsion.duckdb, so these work regardless of where mill is invoked from.
+  * Set PROPULSION_DB to override.
+  */
+object pipeline extends ScalaModule {
+  def scalaVersion = "3.10.0"
+
+  def mvnDeps = Seq(mvn"org.duckdb:duckdb_jdbc:1.5.6.0")
+
+  def scalacOptions = Seq("-deprecation", "-feature")
+}

@@ -35,3 +35,25 @@
   power. Source-quoted rows disagree with their own quadruple by up to 0.075 absolute
   (PPS-1350-G), which is publication rounding and mixed efficiency definitions rather than
   error. This sets the validation tolerance used in task 3.
+
+### Task 3: Scala Mill module
+- Added scala/build.mill, a single ScalaModule on Scala 3.10.0 with one dependency,
+  org.duckdb:duckdb_jdbc:1.5.6.0, matching the DuckDB CLI that writes the file.
+- No test framework. propulsion.Verify runs 26 assertion-based checks from a main class so
+  the module stays inside the agreed dependency budget.
+- Db locates data/propulsion.duckdb by walking up from the working directory, because Mill
+  runs tasks from scala/ rather than the repository root. PROPULSION_DB overrides.
+- Typed dataset in Model.scala and Dataset.scala. Nullable columns are Option, so an absent
+  dry mass stays absent instead of becoming 0.0.
+- Validation.scala holds 17 SQL checks, 14 of them errors and 3 warnings. The efficiency
+  consistency check recomputes T*g0*Isp/(2P) and fails above 0.10 absolute residual.
+- Current state: 0 errors, 30 warnings. 26 of the warnings are dry_mass_unknown, which is the
+  dataset telling the truth about the literature rather than a defect.
+- Comparison.scala states its assumptions as named constants and writes them into the results
+  table: power plant specific mass of 20 kg/kW nuclear and 12 kg/kW solar, and a 5 kg/kW
+  fallback for thruster plus power processing dry mass.
+- Nuclear thermal rows get rocket-equation results only. Reactor thermal power is not
+  electrical input power, so trip time is left NULL rather than computed from a model that
+  does not apply.
+- 104 result rows written (4 missions x 26 thrusters), 86 feasible.
+- Numeric output is formatted under Locale.ROOT so it does not change with the shell locale.
