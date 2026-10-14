@@ -17,7 +17,5 @@ out/
 lean/.lake/
 lean/lake-packages/
 
-# Plots output is regenerated
-docs/figures/*.png
 
 .DS_Store

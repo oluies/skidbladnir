@@ -1,0 +1,375 @@
+"""
+    Propulsion
+
+Numerical models for the propulsion comparison: delta-v budgets, mass fractions and
+power-limited transfer times, read from and written back to the DuckDB file.
+
+The relations here mirror `scala/pipeline/src/propulsion/Physics.scala` and the Lean
+statements in `lean/Propulsion/`. The three implementations are kept deliberately
+independent so that agreement between them is evidence rather than tautology; the
+cross-check lives in `test/runtests.jl`.
+
+Units are SI throughout: thrust N, velocity m/s, power W, mass kg, time s. Specific
+impulse is in seconds, the one non-SI quantity in common use.
+"""
+module Propulsion
+
+using DuckDB
+using DataFrames
+using Printf
+using Dates
+
+export g0,
+    exhaust_velocity,
+    specific_impulse,
+    mass_ratio,
+    propellant_mass_fraction,
+    initial_mass,
+    propellant_mass,
+    input_power,
+    thrust_from_power,
+    mass_flow,
+    transfer_time_seconds,
+    seconds_to_days,
+    delta_v_budget,
+    DELTA_V_BUDGETS,
+    POWER_PLANT_ALPHA_KG_PER_KW,
+    DEFAULT_ALPHA_KG_PER_KW,
+    THRUSTER_SPECIFIC_MASS_KG_PER_KW,
+    MAX_MASS_RATIO,
+    database_path,
+    connect_db,
+    close_db,
+    load_thrusters,
+    load_missions,
+    load_propellants,
+    query_db,
+    compare_one,
+    run_comparison,
+    write_results!,
+    make_plots
+
+# ---------------------------------------------------------------- constants
+
+"Standard gravity, the constant that defines specific impulse in seconds."
+const g0 = 9.80665
+
+"""
+Power system specific mass, kg per kW of electrical output.
+
+This is the most consequential assumption in the comparison and no megawatt-class system
+exists to measure it against. Values match `Comparison.PowerPlantAlphaKgPerKW` on the Scala
+side so the two pipelines can be compared row for row.
+"""
+const POWER_PLANT_ALPHA_KG_PER_KW = Dict(
+    "nuclear_electric" => 20.0,
+    "solar_electric" => 12.0,
+)
+
+const DEFAULT_ALPHA_KG_PER_KW = 20.0
+
+"Fallback for thruster plus power processing dry mass when the source does not give one."
+const THRUSTER_SPECIFIC_MASS_KG_PER_KW = 5.0
+
+"Above this mass ratio the vehicle is not a design, it is an arithmetic artefact."
+const MAX_MASS_RATIO = 1.0e6
+
+const SECONDS_PER_DAY = 86400.0
+
+# ------------------------------------------------------------------ physics
+
+"Exhaust velocity from specific impulse, ve = g0 * Isp."
+exhaust_velocity(isp_s::Real) = g0 * isp_s
+
+"Specific impulse from exhaust velocity, the inverse of [`exhaust_velocity`](@ref)."
+specific_impulse(ve::Real) = ve / g0
+
+"Tsiolkovsky mass ratio m0/mf = exp(dv / ve)."
+mass_ratio(delta_v::Real, ve::Real) = exp(delta_v / ve)
+
+"""
+    propellant_mass_fraction(delta_v, ve)
+
+Propellant mass fraction mp/m0 = 1 - exp(-dv/ve), equal to 1 - 1/MR.
+
+This is strictly between 0 and 1 for every positive finite delta-v, which is the inequality
+the comparison relies on and the one proved in `lean/Propulsion/Basic.lean`.
+"""
+propellant_mass_fraction(delta_v::Real, ve::Real) = 1 - exp(-delta_v / ve)
+
+"Initial mass needed to deliver `m_final` through `delta_v`."
+initial_mass(m_final::Real, delta_v::Real, ve::Real) = m_final * mass_ratio(delta_v, ve)
+
+"Propellant mass needed to deliver `m_final` through `delta_v`."
+propellant_mass(m_final::Real, delta_v::Real, ve::Real) =
+    initial_mass(m_final, delta_v, ve) - m_final
+
+"Electrical input power for a given thrust, P = T * ve / (2 * eta)."
+input_power(thrust_N::Real, ve::Real, eta::Real) = thrust_N * ve / (2 * eta)
+
+"Thrust available from a given electrical power, the inverse of [`input_power`](@ref)."
+thrust_from_power(power_W::Real, ve::Real, eta::Real) = 2 * eta * power_W / ve
+
+"Propellant mass flow rate, mdot = T / ve."
+mass_flow(thrust_N::Real, ve::Real) = thrust_N / ve
+
+"""
+    transfer_time_seconds(mp, ve, eta, power_W)
+
+Thrusting time for a power-limited vehicle, t = mp * ve^2 / (2 * eta * P).
+
+This is the burn duration rather than a trajectory solution, and so is a lower bound on
+trip time for a continuously thrusting transfer.
+"""
+transfer_time_seconds(mp::Real, ve::Real, eta::Real, power_W::Real) =
+    mp * ve^2 / (2 * eta * power_W)
+
+seconds_to_days(seconds::Real) = seconds / SECONDS_PER_DAY
+
+# ------------------------------------------------------------ delta-v budget
+
+"""
+Per-mission delta-v budgets, broken into named legs.
+
+These are project assumptions, not values taken from a source. They are recorded here so
+that the single `delta_v_m_s` number in the missions table can be seen as something built
+out of parts rather than asserted. `test/runtests.jl` checks that every budget sums to the
+value held in the database.
+"""
+const DELTA_V_BUDGETS = Dict(
+    "mars_crew_nominal" => (
+        earth_departure = 3500.0,
+        mars_arrival = 2500.0,
+        margin = 1000.0,
+    ),
+    "mars_crew_fast" => (
+        earth_departure = 7000.0,
+        mars_arrival = 6000.0,
+        margin = 2000.0,
+    ),
+    "probe500_nominal" => (
+        earth_escape = 5000.0,
+        cruise_shaping = 4000.0,
+        target_rendezvous = 2000.0,
+        margin = 1000.0,
+    ),
+    "probe500_aggressive" => (
+        earth_escape = 7000.0,
+        cruise_shaping = 8000.0,
+        target_rendezvous = 3000.0,
+        margin = 2000.0,
+    ),
+)
+
+"""
+    delta_v_budget(mission_id) -> NamedTuple
+
+The delta-v legs for a mission. `sum(values(delta_v_budget(id)))` is the mission total.
+"""
+delta_v_budget(mission_id::AbstractString) = DELTA_V_BUDGETS[mission_id]
+
+# ----------------------------------------------------------------- database
+
+"""
+    database_path() -> String
+
+Locate `data/propulsion.duckdb` by walking up from the working directory, matching what the
+Scala side does. `PROPULSION_DB` overrides.
+"""
+function database_path()
+    explicit = get(ENV, "PROPULSION_DB", "")
+    isempty(explicit) || return explicit
+    dir = pwd()
+    while true
+        candidate = joinpath(dir, "data", "propulsion.duckdb")
+        isfile(candidate) && return candidate
+        parent = dirname(dir)
+        parent == dir && error(
+            "could not find data/propulsion.duckdb walking up from $(pwd()). " *
+            "Build it with: duckdb data/propulsion.duckdb < sql/schema.sql",
+        )
+        dir = parent
+    end
+end
+
+connect_db(path::AbstractString = database_path()) = DBInterface.connect(DuckDB.DB, path)
+
+"Close a connection opened by [`connect_db`](@ref)."
+close_db(con) = DBInterface.close!(con)
+
+query(con, sql::AbstractString) = DataFrame(DBInterface.execute(con, sql))
+
+"""
+    query_db(con, sql) -> DataFrame
+
+Run `sql` and collect the rows. Exported so callers do not need DBInterface directly.
+"""
+query_db(con, sql::AbstractString) = query(con, sql)
+
+load_thrusters(con) = query(con, "SELECT * FROM thrusters ORDER BY thruster_id")
+load_missions(con) = query(con, "SELECT * FROM missions ORDER BY mission_id")
+load_propellants(con) = query(con, "SELECT * FROM propellants ORDER BY propellant")
+
+# --------------------------------------------------------------- comparison
+
+ismiss(x) = x === missing || (x isa Real && !isfinite(x))
+
+alpha_for(power_source) =
+    ismiss(power_source) ? DEFAULT_ALPHA_KG_PER_KW :
+    get(POWER_PLANT_ALPHA_KG_PER_KW, power_source, DEFAULT_ALPHA_KG_PER_KW)
+
+"""
+    compare_one(mission, thruster) -> NamedTuple or nothing
+
+Compare one thruster row against one mission row. Returns `nothing` when the thruster does
+not record a specific impulse, which is the least the rocket equation needs.
+
+Electric rows get the full power-limited treatment. Nuclear thermal rows get the rocket
+equation only: reactor thermal power is not electrical input power, so trip time is left
+`missing` rather than computed from a model that does not apply to them.
+"""
+function compare_one(mission, thruster)
+    ismiss(thruster.isp_s) && return nothing
+
+    ve = exhaust_velocity(thruster.isp_s)
+    mr = mass_ratio(mission.delta_v_m_s, ve)
+    zeta = propellant_mass_fraction(mission.delta_v_m_s, ve)
+
+    electric =
+        thruster.power_basis == "electrical_input" &&
+        !ismiss(thruster.thrust_mN) &&
+        !ismiss(thruster.input_power_W) &&
+        !ismiss(thruster.efficiency) &&
+        !ismiss(mission.power_available_W)
+
+    if electric
+        p_avail = mission.power_available_W
+        p_thruster = thruster.input_power_W
+        eta = thruster.efficiency
+        n = max(1, Int(floor(p_avail / p_thruster)))
+        p_total = n * p_thruster
+        unit_mass =
+            ismiss(thruster.mass_kg) ?
+            THRUSTER_SPECIFIC_MASS_KG_PER_KW * p_thruster / 1000 : thruster.mass_kg
+        alpha = alpha_for(mission.power_source)
+        power_plant_mass = alpha * p_avail / 1000
+        inert_mass = mission.payload_mass_kg + power_plant_mass + n * unit_mass
+        m0 = inert_mass * mr
+        mp = m0 - inert_mass
+        trip_days = seconds_to_days(transfer_time_seconds(mp, ve, eta, p_total))
+        meets = ismiss(mission.max_trip_time_days) ? missing :
+                trip_days <= mission.max_trip_time_days
+        sane = isfinite(mr) && mr <= MAX_MASS_RATIO && isfinite(m0)
+        mass_note =
+            ismiss(thruster.mass_kg) ?
+            @sprintf("thruster mass assumed at %.1f kg/kW", THRUSTER_SPECIFIC_MASS_KG_PER_KW) :
+            "thruster mass from source"
+
+        return (
+            mission_id = mission.mission_id,
+            thruster_id = thruster.thruster_id,
+            n_thrusters = n,
+            exhaust_velocity_m_s = ve,
+            mass_ratio = mr,
+            propellant_mass_fraction = zeta,
+            propellant_mass_kg = mp,
+            initial_mass_kg = m0,
+            power_plant_mass_kg = power_plant_mass,
+            thrust_total_N = n * thruster.thrust_mN / 1000,
+            power_total_W = p_total,
+            trip_time_days = trip_days,
+            meets_time_constraint = meets,
+            feasible = sane && (meets === missing ? true : meets),
+            alpha_kg_per_kW = alpha,
+            notes = @sprintf(
+                "power-limited electric; %s; power plant %.0f kg at %.1f kg/kW",
+                mass_note, power_plant_mass, alpha
+            ),
+        )
+    else
+        inert_mass = mission.payload_mass_kg
+        m0 = inert_mass * mr
+        mp = m0 - inert_mass
+        sane = isfinite(mr) && mr <= MAX_MASS_RATIO && isfinite(m0)
+        why =
+            thruster.power_basis == "reactor_thermal" ?
+            "nuclear thermal: power-limited transfer model does not apply, trip time not evaluated" :
+            ismiss(mission.power_available_W) ? "mission states no available power" :
+            "row lacks one of thrust, Isp, power or efficiency"
+
+        return (
+            mission_id = mission.mission_id,
+            thruster_id = thruster.thruster_id,
+            n_thrusters = missing,
+            exhaust_velocity_m_s = ve,
+            mass_ratio = mr,
+            propellant_mass_fraction = zeta,
+            propellant_mass_kg = mp,
+            initial_mass_kg = m0,
+            power_plant_mass_kg = missing,
+            thrust_total_N = ismiss(thruster.thrust_mN) ? missing : thruster.thrust_mN / 1000,
+            power_total_W = missing,
+            trip_time_days = missing,
+            meets_time_constraint = missing,
+            feasible = sane,
+            alpha_kg_per_kW = missing,
+            notes = "$why; engine dry mass excluded, initial mass is payload times mass ratio",
+        )
+    end
+end
+
+"""
+    run_comparison(con) -> DataFrame
+
+Every mission crossed with every thruster that records a specific impulse.
+"""
+function run_comparison(con)
+    missions = load_missions(con)
+    thrusters = load_thrusters(con)
+    rows = NamedTuple[]
+    for m in eachrow(missions), t in eachrow(thrusters)
+        r = compare_one(m, t)
+        r === nothing || push!(rows, r)
+    end
+    DataFrame(rows)
+end
+
+"""
+    write_results!(con, results; producer="julia", run_id=...)
+
+Replace this producer's rows in the `results` table. Rows written by the Scala pipeline are
+left alone, so both sets can be compared afterwards.
+"""
+function write_results!(con, results::DataFrame; producer::AbstractString = "julia",
+                        run_id::AbstractString = "julia-$(Dates.format(now(), "yyyy-mm-ddTHH:MM:SS"))")
+    DBInterface.execute(con, "DELETE FROM results WHERE producer = '$producer'")
+
+    staged = copy(results)
+    staged.run_id .= run_id
+    staged.run_ts .= now()
+    staged.producer .= producer
+
+    DuckDB.register_data_frame(con, staged, "staged_results")
+    try
+        DBInterface.execute(con, """
+            INSERT INTO results (
+                run_id, run_ts, producer, mission_id, thruster_id, n_thrusters,
+                exhaust_velocity_m_s, mass_ratio, propellant_mass_fraction, propellant_mass_kg,
+                initial_mass_kg, power_plant_mass_kg, thrust_total_N, power_total_W,
+                trip_time_days, meets_time_constraint, feasible, alpha_kg_per_kW, notes)
+            SELECT
+                run_id, run_ts, producer, mission_id, thruster_id, n_thrusters,
+                exhaust_velocity_m_s, mass_ratio, propellant_mass_fraction, propellant_mass_kg,
+                initial_mass_kg, power_plant_mass_kg, thrust_total_N, power_total_W,
+                trip_time_days, meets_time_constraint, feasible, alpha_kg_per_kW, notes
+            FROM staged_results
+        """)
+    finally
+        DuckDB.unregister_data_frame(con, "staged_results")
+    end
+    nrow(staged)
+end
+
+include("plots.jl")
+
+end # module

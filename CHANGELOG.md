@@ -57,3 +57,24 @@
   does not apply.
 - 104 result rows written (4 missions x 26 thrusters), 86 feasible.
 - Numeric output is formatted under Locale.ROOT so it does not change with the shell locale.
+
+### Task 4: Julia package
+- Added julia/Propulsion: physics relations, delta-v budgets, the comparison, DuckDB
+  round-trip and plotting. Dependencies are DuckDB.jl, DataFrames.jl, Plots.jl and three
+  standard library packages.
+- DuckDB.jl 1.5.2 reads the file written by the DuckDB 1.5.6 CLI without trouble.
+- DELTA_V_BUDGETS breaks each mission's single delta-v figure into named legs, and a test
+  checks every budget sums to the value held in the missions table.
+- The physics relations are implemented independently of the Scala versions rather than
+  shared, so that agreement between them carries information. The test suite joins the two
+  producers' rows in the results table and requires them to match to 1e-9 relative. They do,
+  across all 104 rows.
+- 878 tests pass.
+- One test documents a real limit. The mass-fraction inequality is strict over the reals and
+  is proved that way in Lean, but in Float64 the fraction rounds to exactly 1.0 once dv/ve
+  passes about 37. The comparison's MAX_MASS_RATIO of 1e6 corresponds to dv/ve near 13.8, so
+  the models stay well clear of it. The test pins both facts.
+- Four figures written to docs/figures: trip time, initial mass, propellant mass and the
+  specific impulse against trip time trade. Bars are linear, not logarithmic, because a bar
+  starts at zero. Nuclear thermal rows are absent from the trip-time figure by construction.
+- Figures are committed rather than ignored, because docs/findings.md refers to them.
