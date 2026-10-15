@@ -167,19 +167,23 @@ up as less propellant while its lower efficiency shows up as a longer burn. Wher
 trip-time cap is slack, krypton looks better.
 
 Where the cap binds, the sign reverses completely. On the fast Mars mission all three krypton
-rows fail the 210-day limit while both xenon controls pass: the BHT-1500-C needs 225.8 days on
-krypton against 186.8 on xenon, which is a like-for-like pair, and the SPT-100 at 393 V needs
-239.5 days against 202.4 for the 302 V xenon control, which is not. Krypton is not a drop-in
-substitution whose cost is a fixed efficiency penalty; it moves a vehicle along the
-mass-against-time trade, and which direction counts as better depends entirely on which
+rows fail the 210-day limit while both xenon controls pass. The two like-for-like pairs carry
+the result: the BHT-1500-C needs 225.8 days on krypton against 186.8 on xenon, and the
+SPT-100 at its nominal condition needs 251.3 days on krypton against 202.4 on xenon. The
+SPT-100 at 393 V also fails, at 239.5 days, but its only xenon comparison here is the 302 V
+control, so it is the weaker of the three data points rather than the strongest. Krypton is
+not a drop-in substitution whose cost is a fixed efficiency penalty; it moves a vehicle along
+the mass-against-time trade, and which direction counts as better depends entirely on which
 constraint is active.
 
 Two things keep this from being a recommendation. The first is tankage, which the model does
-not carry. For the probe, the BHT-1500-C needs 636 kg of krypton in 0.98 m³ against 722 kg of
-xenon in 0.45 m³ at the storage densities in the propellants table, so krypton saves 86 kg of
-propellant while asking for 2.2 times the tank volume. Whether the tank mass for that volume
-is under 86 kg decides the comparison, and no source consulted gives tank mass for a krypton
-system. The second is that krypton reaches no higher than fourteenth on the probe and does not
+not carry. At the storage densities in the propellants table, 650 against 1600 kg/m3 at 293 K,
+krypton needs 2.46 times the tank volume of xenon for the same propellant mass. The probe case
+is milder than that because krypton also carries less propellant: the BHT-1500-C needs 636 kg
+of krypton in 0.98 m3 against 722 kg of xenon in 0.45 m3, so 12 percent less mass in 2.2 times
+the volume. Whether the tank mass for that extra volume is under the 86 kg of propellant saved
+decides the comparison, and no source consulted gives tank mass for a krypton system.
+The second is that krypton reaches no higher than fourteenth on the probe and does not
 enter the top six on either Mars mission. The leaders everywhere are high-Isp gridded ion
 thrusters on xenon, and adding krypton moved none of them.
 

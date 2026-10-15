@@ -192,3 +192,18 @@ four figures render, Lean builds and all 21 theorems report only the three stand
 - plots.jl: hoisted the duplicated horizontal bar panel into hbar_panel, shared by make_plots
   and make_krypton_plot, parameterised by colour column, colour map, topn and an optional
   alpha column. Figures are byte-for-byte equivalent. Fixed the stale "26 bars" docstring.
+
+### Review 1973 corrections
+- The krypton note in data/raw/propellants.csv still ended "each with a matched xenon
+  control", the exact claim the previous commit corrected in four other places. The shipped
+  data note was contradicting every document that reads from it. It now names which two
+  krypton points have a control and says the 393 V point has none.
+- The density reconciliation did not follow from its own numbers. 650 against 1600 kg/m3 is
+  2.46 times the volume per kilogram, not 2.2; the 2.2 in the probe case only comes out that
+  low because krypton also carries 12 percent less propellant. Survey, findings and the CSV
+  note now give the two steps separately instead of presenting a per-kilogram density ratio
+  as if it produced the per-case volume ratio.
+- The fast-Mars paragraph cited only the unmatched SPT-100 comparison and omitted the second
+  genuine pair. It now leads with both like-for-like pairs, BHT-1500-C at 225.8 against 186.8
+  days and SPT-100 nominal at 251.3 against 202.4, and keeps the 393 V row as the explicitly
+  weaker data point.

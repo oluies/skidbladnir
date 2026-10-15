@@ -308,12 +308,14 @@ Krypton's smaller ionisation cross-section and higher ionisation energy also nar
 stable operating window; one 300 W-class study found unstable operation below 250 V and
 above 450 V anode voltage [S12]. Linnell and Gallimore found a 5 to 15 percentage point
 reduction in overall efficiency on the NASA-173Mv1 at 6 to 8 kW [S32]. Storage is a separate
-penalty: at 14 MPa and 50 C krypton stores at about one third the density of xenon, though
-the gap closes as temperature falls and at -50 C krypton approaches xenon at 50 C [S12]. The
-representative densities carried in the propellants table, 650 against 1600 kg/m3 at 293 K,
-give a milder ratio of about 41%, so the storage penalty quoted in docs/findings.md is 2.2
-times the volume rather than three times; the two figures are at different conditions and do
-not conflict.
+penalty: at 14 MPa and 50 C krypton stores at about one third the density of xenon, so three
+times the volume for a given mass, though the gap closes as temperature falls and at -50 C
+krypton approaches xenon at 50 C [S12]. The representative densities carried in the
+propellants table, 650 against 1600 kg/m3 at 293 K, are milder and give 2.46 times the volume
+per kilogram. The 2.2 times quoted in docs/findings.md is a third quantity again: it is the
+probe case, where krypton carries 12% less propellant as well, so the two effects partly
+cancel. The three figures are at different conditions and on different bases, and none of
+them contradicts the others.
 
 Life is less dark than it was. A flight-model SPT-100 ran 205 hours on krypton at 2 kW, 50%
 above its nominal power, holding a steady discharge current and beam profile, with boron
