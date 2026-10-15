@@ -48,7 +48,8 @@ export g0,
     compare_one,
     run_comparison,
     write_results!,
-    make_plots
+    make_plots,
+    make_krypton_plot
 
 # ---------------------------------------------------------------- constants
 

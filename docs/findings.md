@@ -19,16 +19,16 @@ The database is not version controlled; it is rebuilt from `sql/schema.sql` and 
 
 ## What was computed, and on what assumptions
 
-For each of 4 missions and each of 26 thrusters that records a specific impulse, the
+For each of 4 missions and each of 31 thrusters that records a specific impulse, the
 pipeline computes exhaust velocity, Tsiolkovsky mass ratio, propellant mass fraction,
 propellant and initial mass, thruster count, total thrust and power, and power-limited
-thrusting time. That is 104 rows, of which 86 are feasible.
+thrusting time. That is 124 rows, of which 103 are feasible.
 
 Three assumptions carry the result. None is a measurement.
 
 Power plant specific mass is taken as 20 kg/kW for nuclear electric and 12 kg/kW for solar
 electric. Thruster plus power processing dry mass, where a source does not give one, is
-taken as 5 kg/kW; this applies to 24 of the 26 rows. Mission payload masses, delta-v and
+taken as 5 kg/kW; this applies to 29 of the 31 rows. Mission payload masses, delta-v and
 trip-time caps are stated project assumptions, with only the 2 MWe and 6 MWe power levels
 traceable to a source [S18].
 
@@ -41,7 +41,7 @@ support. NTP can therefore be compared on mass here, and cannot be compared on t
 
 ## Crewed Mars transfer, nominal
 
-90 t payload, 7000 m/s, 2 MWe, 365-day cap. 25 of 26 candidates are feasible; the only
+90 t payload, 7000 m/s, 2 MWe, 365-day cap. 30 of 31 candidates are feasible; the only
 failure is the NPT30-I2, a 1 mN cubesat thruster that has no business on this mission.
 
 | rank | thruster | type | propellant | initial mass kg | propellant kg | mass fraction | days | units |
@@ -65,7 +65,7 @@ VASIMR and the two lithium MPD thrusters, are the least mature hardware in the s
 
 ## Crewed Mars transfer, fast
 
-90 t payload, 15 000 m/s, 6 MWe, 210-day cap. Only 9 of 26 are feasible, and the pattern of
+90 t payload, 15 000 m/s, 6 MWe, 210-day cap. Only 11 of 31 are feasible, and the pattern of
 failure is the result.
 
 | rank | thruster | type | propellant | initial mass kg | propellant kg | mass fraction | days | units |
@@ -73,11 +73,13 @@ failure is the result.
 | 1 | HERMeS AEPS | Hall | xenon | 432 221 | 192 221 | 0.445 | 196.9 | 480 |
 | 2 | X3 nested-channel Hall | Hall | xenon | 441 420 | 201 720 | 0.457 | 177.0 | 60 |
 | 3 | NASEM reference NTP | nuclear thermal | hydrogen | 492 422 | 402 422 | 0.817 | not evaluated | - |
-| 4 | Pewee | nuclear thermal | hydrogen | 550 021 | 460 021 | 0.836 | not evaluated | - |
-| 5 | SPT-140 | Hall | xenon | 575 179 | 335 179 | 0.583 | 173.1 | 1200 |
-| 6 | Phoebus-2A | nuclear thermal | hydrogen | 581 229 | 491 229 | 0.845 | not evaluated | - |
+| 4 | BHT-1500-C xenon | Hall | xenon | 521 683 | 281 686 | 0.540 | 186.8 | 3333 |
+| 5 | Pewee | nuclear thermal | hydrogen | 550 021 | 460 021 | 0.836 | not evaluated | - |
+| 6 | SPT-140 | Hall | xenon | 575 179 | 335 179 | 0.583 | 173.1 | 1200 |
+| 7 | Phoebus-2A | nuclear thermal | hydrogen | 581 229 | 491 229 | 0.845 | not evaluated | - |
 
-Every gridded ion thruster fails, as do all three lithium MPD thrusters and VASIMR. They
+Every gridded ion thruster fails, as do all three lithium MPD thrusters, VASIMR and all
+three krypton rows, each of which fails where its matched xenon control passes. They
 fail on time, not on mass. The power-limited thrusting time scales with the square of
 exhaust velocity at fixed power, so the high specific impulse that wins the nominal mission
 is exactly what loses the fast one. The survivors are the low-Isp, high-thrust-density Hall
@@ -129,12 +131,62 @@ and T6 are second and third at a cost of 8 % and 10 % in initial mass, and both 
 qualified hardware, with T6 flying on BepiColombo [S26] and NEXT having completed its
 ground qualification [S02]. For a 500 kg probe the defensible choice is NEXT or T6.
 
+## Krypton against xenon on matched hardware
+
+The dataset carries three measured krypton operating points, each with a xenon control taken
+on the same thruster in the same facility, so the propellant can be compared without going
+through a correction factor. The pairs behave the same way on both reference missions.
+
+Crewed Mars nominal:
+
+| thruster | propellant | Isp s | efficiency | initial mass kg | propellant kg | days | units |
+|---|---|---|---|---|---|---|---|
+| BHT-1500-C | krypton | 2160 | 0.474 | 194 817 | 54 823 | 150.3 | 1052 |
+| BHT-1500-C | xenon | 1970 | 0.543 | 201 134 | 61 135 | 121.6 | 1111 |
+| SPT-100 nominal | krypton | 1568 | 0.360 | 220 705 | 80 712 | 153.5 | 1474 |
+| SPT-100 nominal | xenon | 1511 | 0.440 | 224 534 | 84 537 | 122.1 | 1480 |
+
+500 kg probe nominal:
+
+| thruster | propellant | initial mass kg | propellant kg | days | units |
+|---|---|---|---|---|---|
+| BHT-1500-C | krypton | 1471 | 636 | 183.5 | 10 |
+| BHT-1500-C | xenon | 1561 | 722 | 145.1 | 11 |
+| SPT-100 nominal | krypton | 1822 | 987 | 197.6 | 14 |
+| SPT-100 nominal | xenon | 1876 | 1041 | 159.0 | 14 |
+
+Krypton wins on mass in every pair, by 3.1 % for the BHT-1500-C and 1.7 % for the SPT-100 on
+the crewed mission, and loses on time by 24 % and 26 %. That split follows from the structure
+of the model rather than from anything subtle. At a fixed available power, specific impulse
+sets propellant mass and efficiency sets thrust, so krypton's higher specific impulse shows
+up as less propellant while its lower efficiency shows up as a longer burn. Wherever the
+trip-time cap is slack, krypton looks better.
+
+Where the cap binds, the sign reverses completely. On the fast Mars mission all three krypton
+rows fail the 210-day limit while all three xenon controls pass: the BHT-1500-C needs 225.8
+days on krypton against 186.8 on xenon, and the SPT-100 at 393 V needs 239.5 against 202.4.
+Krypton is not a drop-in substitution whose cost is a fixed efficiency penalty; it moves a
+vehicle along the mass-against-time trade, and which direction counts as better depends
+entirely on which constraint is active.
+
+Two things keep this from being a recommendation. The first is tankage, which the model does
+not carry. For the probe, the BHT-1500-C needs 636 kg of krypton in 0.98 m³ against 722 kg of
+xenon in 0.45 m³ at the storage densities in the propellants table, so krypton saves 86 kg of
+propellant while asking for 2.2 times the tank volume. Whether the tank mass for that volume
+is under 86 kg decides the comparison, and no source consulted gives tank mass for a krypton
+system. The second is that krypton reaches no higher than fourteenth on the probe and does not
+enter the top six on either Mars mission. The leaders everywhere are high-Isp gridded ion
+thrusters on xenon, and adding krypton moved none of them.
+
+`docs/figures/krypton_vs_xenon.png` plots the pairs across all three missions, with the rows
+that fail their time cap drawn pale.
+
 ## Agreement between the implementations
 
 The Scala and Julia pipelines implement the relations separately rather than sharing code.
 The Julia test suite joins both producers' rows in the `results` table and requires
-agreement to 1e-9 relative. All 104 rows agree on initial mass, propellant mass, trip time
-and thruster count. 878 Julia tests and 26 Scala self-tests pass, and SQL validation
+agreement to 1e-9 relative. All 124 rows agree on initial mass, propellant mass, trip time
+and thruster count. 1038 Julia tests and 26 Scala self-tests pass, and SQL validation
 reports no errors over 17 checks.
 
 The Lean development proves the relations the comparison uses, including
@@ -168,8 +220,8 @@ The probe rankings do not move. HiPEP, NEXT and T6 hold the top three places acr
 combination tried, with only the fourth and fifth places exchanging. The probe conclusion
 can be relied on; the crewed Mars conclusion cannot.
 
-Figures are in `docs/figures`: `trip_time.png`, `initial_mass.png`, `propellant_mass.png`
-and `isp_vs_trip_time.png`.
+Figures are in `docs/figures`: `trip_time.png`, `initial_mass.png`, `propellant_mass.png`,
+`isp_vs_trip_time.png` and `krypton_vs_xenon.png`.
 
 ## The three unknowns that would most change these results
 
@@ -184,8 +236,8 @@ crewed NEP trip time, including the ones here, rests on an assumed value. A grou
 demonstration at even 100 kWe with measured mass, including radiators and power
 conditioning, would settle more about crewed Mars propulsion than any thruster programme.
 
-**Thruster and power-processing dry mass.** The dataset records a dry mass for 2 of 26
-thrusters. The other 24 use an assumed 5 kg/kW, and the validation run emits 26
+**Thruster and power-processing dry mass.** The dataset records a dry mass for 2 of 31
+thrusters. The other 29 use an assumed 5 kg/kW, and the validation run emits 29
 `dry_mass_unknown` warnings to make that visible. The gap is in the literature rather than
 in the transcription: performance papers report thrust, specific impulse, power and
 efficiency, and very often omit mass. Because the assumption scales with power, it
@@ -211,17 +263,27 @@ propellant mass by thruster count gives what each unit must process:
 | Mars nominal | PPS-1350-G | 1333 | 57 |
 | Mars nominal | NSTAR | 860 | 41 |
 
-The only in-flight throughput figure in the dataset is the PPS-1350-G, which processed 82 kg
-of xenon over about 5000 hours on SMART-1 [S01]. The candidates that need fewest units, and
-that look best on mass, are the ones requiring one to two orders of magnitude more
-throughput per unit than that, from hardware whose life has never been characterised: the
-X3 at 2306 kg per unit, with cathodes drawing 247 A that are a research item rather than a
-product [S08], and the lithium MPD thrusters at 2553 kg per unit, whose published test
-durations are short and whose electrode erosion is largely uncharacterised [S13]. Running
-the trade the other way, the thrusters whose throughput requirement sits inside demonstrated
-experience are the ones needing hundreds or thousands of units. Qualified throughput per
-thruster, measured to the duration a Mars mission actually needs, would decide between those
-two bad options, and nothing in the present data can.
+The throughput actually demonstrated is far below all of this. The best-qualified figure in
+the dataset is the SPT-100, validated past 2.71 MN·s of total impulse, about 9000 hours at its
+nominal condition [S31]; at its measured 1511 s that is roughly 183 kg of xenon per thruster.
+The PPS-1350-G accumulated 82 kg over about 5000 hours in flight on SMART-1 [S01]. The
+candidates that need fewest units, and that look best on mass, are the ones requiring one to
+two orders of magnitude more throughput per unit than those figures, from hardware whose life
+has never been characterised: the X3 at 2306 kg per unit, with cathodes drawing 247 A that are
+a research item rather than a product [S08], and the lithium MPD thrusters at 2553 kg per unit,
+whose published test durations are short and whose electrode erosion is largely
+uncharacterised [S13]. Running the trade the other way, the thrusters whose throughput
+requirement sits inside demonstrated experience are the ones needing hundreds or thousands of
+units.
+
+Krypton makes this worse rather than better. It cuts propellant mass per unit, which helps,
+but the longest published krypton run on any thruster is the 205 hours the SPT-100 managed at
+2 kW [S31], against roughly 9000 hours qualified on xenon. The same paper notes that running
+its example mission on krypton would put as much energy through the thruster as 8800 hours of
+nominal xenon operation, and that whether the hardware survives that is unknown [S31].
+Qualified throughput per thruster, measured to the duration a Mars mission actually needs and
+on the propellant actually proposed, would decide between these options, and nothing in the
+present data can.
 
 ## What this comparison does not settle
 
@@ -238,8 +300,13 @@ The delta-v figures and payload masses are project assumptions. They are decompo
 named legs in `DELTA_V_BUDGETS` and checked against the database, which makes them explicit
 and auditable, but it does not make them right.
 
-Krypton and iodine appear in the propellants table and in the survey, but no krypton
-thruster is in the dataset, because the krypton literature reports efficiency as a range
-against xenon rather than as a standalone operating point [S12]. A krypton comparison would
-need measured krypton performance for a specific thruster, not a penalty applied to a xenon
-number.
+Krypton is compared here without a tank model, which is the one thing that could overturn the
+matched-pair result above. Iodine appears in the propellants table and in the survey but
+contributes only the NPT30-I2, a 1 mN cubesat thruster that fails both reference missions on
+thrust; there is no kilowatt-class iodine operating point to add, because none has been
+published [S11].
+
+Argon is represented only by VASIMR, which is a 200 kW laboratory device run in one-to-two
+minute pulses [S15]. Its third place on the crewed Mars nominal mission rests on a peak
+performance point, not on anything sustained, and the longest continuous run of the follow-on
+hardware was 88 hours at 80 kW [S16].

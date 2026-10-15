@@ -124,3 +124,48 @@ Full rebuild from a clean database passes end to end: schema loads, 26 Scala sel
 pass, validation reports 0 errors over 17 checks, both pipelines write 104 rows with 86
 feasible, 878 Julia tests pass including agreement with the Scala rows to 1e-9 relative,
 four figures render, Lean builds and all 21 theorems report only the three standard axioms.
+
+## 2026-10-15 (later)
+
+### Krypton thruster data from measured operating points
+- Added three measured krypton operating points, each with a xenon control taken on the same
+  thruster in the same facility, so the propellant can be compared without a correction
+  factor. Thruster count goes from 26 to 31, result rows from 104 to 124, feasible from 86
+  to 103.
+- spt100_kr_390v is the strongest row in the whole dataset: thrust 86.7 mN, Isp 1966 s, power
+  1977 W and total efficiency 0.423 are all measured, and they agree with each other to
+  0.00025 in efficiency. Taken from the 205-hour krypton life test of a flight-model SPT-100.
+- spt100_kr_nom and spt100_xe_nakles are the nominal-condition pair from the same programme.
+  The derived xenon thrust of 80.2 mN reproduces the 80 mN flight figure quoted independently
+  in S01, which checks the derivation method used for every derived thrust in the dataset.
+- bht1500c_kr and bht1500c_xe are the Busek pair, the best krypton point reported and its
+  nearest matched xenon condition.
+- New sources S30 (IEPC-2011-003), S31 (IEPC-2013-347 life test) and S32 (Linnell and
+  Gallimore, JPP 2006). S12 updated with authors and the BHT-1500-C designation.
+- All five rows pass the efficiency consistency check with residuals below 0.0003.
+
+### What the krypton data shows
+- Krypton wins on mass in every matched pair and loses on time in every one: 3.1 percent less
+  initial mass and 24 percent more thrusting time for the BHT-1500-C on crewed Mars nominal.
+  At fixed available power, Isp sets propellant mass and efficiency sets thrust, so krypton's
+  trade lands on different axes.
+- Where the time cap binds the sign reverses. On the fast Mars mission all three krypton rows
+  fail the 210-day limit while all three xenon controls pass.
+- The comparison carries no tank model, which is the one thing that could overturn this. For
+  the probe, krypton saves 86 kg of propellant and asks for 2.2 times the tank volume.
+- Krypton reaches no higher than fourteenth on the probe and enters no Mars top six. The
+  headline recommendations are unchanged.
+- The SPT-100 nominal pair shows the theoretical 25 percent Isp gain arriving as under 4
+  percent: 1568 s against 1511 s on the same thruster.
+
+### Documents and figures
+- docs/survey.md krypton section rewritten around the measured points, with a table of the
+  five rows and their provenance. Krypton open problems rewritten: the efficiency penalty is
+  now measured rather than a range, but tankage and life remain open. The 205-hour test is
+  the longest published krypton run and is two orders of magnitude short of qualification.
+- docs/findings.md gains a matched-hardware section, updated counts throughout, and a
+  rewritten throughput unknown that now uses the SPT-100 qualified figure of 2.71 MN-s, about
+  183 kg of xenon per thruster, as the anchor instead of the PPS-1350-G flight accumulation.
+- New figure docs/figures/krypton_vs_xenon.png plots the pairs across three missions with
+  time-cap failures drawn pale.
+- Sensitivity conclusions are unchanged; the new rows enter no top five in any case tried.

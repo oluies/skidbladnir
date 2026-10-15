@@ -272,17 +272,50 @@ supercritical fluid at moderate pressure, and is chemically inert. It is also sc
 produced as a by-product of air separation in quantities that constellation-scale electric
 propulsion can visibly move.
 
-Krypton is the first substitution. It is cheaper and more abundant, and its lower atomic mass gives
-it a theoretical specific impulse about 25% above xenon. The measured picture is worse than the
-theory. Krypton achieves up to 92% of xenon's specific impulse at comparable operating conditions,
-and the realised value falls well short of the theoretical figure because krypton is harder to
-ionise [S12]. The absolute efficiency gap against xenon spans 6 to 24 percentage points depending on
-the thruster and condition, with reported anode-efficiency degradation of 20 to 23% in some studies
-and 9 to 18% at discharge powers from 4.5 to 9 kW in others [S12]. The losses are attributed mainly
-to mass utilisation and beam divergence [S12]. Krypton's smaller ionisation cross-section and higher
-ionisation energy also narrow the stable operating window; one 300 W-class study found unstable
-operation below 250 V and above 450 V anode voltage [S12]. Lower storage density is a further
-penalty, since the same tank volume holds less propellant mass.
+Krypton is the first substitution. It is cheaper and more abundant, and its lower atomic mass
+gives it a theoretical specific impulse about 25% above xenon at the same discharge potential
+[S12]. The measured picture is worse than the theory, and the dataset now carries three
+measured krypton operating points with a matched xenon control for each, so the penalty can
+be read off directly rather than taken as a range.
+
+| thruster | propellant | power W | Isp s | total efficiency | thrust mN |
+|---|---|---|---|---|---|
+| SPT-100, nominal 302 V [S30] | krypton | 1356 | 1568 | 0.360 | 63.5 |
+| SPT-100, nominal 302 V [S30] | xenon | 1351 | 1511 | 0.440 | 80.2 |
+| SPT-100, 393 V [S31] | krypton | 1977 | 1966 | 0.423 | 86.7 |
+| BHT-1500-C, 400 V [S12] | krypton | 1900 | 2160 | 0.474 | 85.0 |
+| BHT-1500-C, 400 V [S12] | xenon | 1800 | 1970 | 0.543 | 101.2 |
+
+The SPT-100 nominal pair is the clearest statement of the problem. On the same flight-model
+thruster in the same facility, krypton gave 1568 s against 1511 s for xenon, so the 25%
+theoretical gain in specific impulse arrived as under 4% [S30]. Total efficiency fell from
+0.440 to 0.360, eight points. The thrust figures in the table for that pair are derived from
+the measured specific impulse and efficiency; the derived xenon value of 80.2 mN reproduces
+the 80 mN flight figure quoted independently in [S01], which is a check on the derivation.
+The 393 V SPT-100 row is the one whose thrust, specific impulse and efficiency were all
+measured directly, and they agree with each other to within 0.0003 in efficiency [S31].
+
+The BHT-1500-C pair shows what a thruster designed around the propellant can recover.
+Krypton raised specific impulse by about 190 s at nearly equivalent discharge power and
+potential, and cost 7 to 8 points of efficiency rather than the SPT-100's eight on a much
+lower base [S12]. Running the SPT-100 harder helps too: at 393 V krypton reaches 1966 s at
+0.423 efficiency [S31], which is most of the BHT-1500-C's specific impulse.
+
+The losses are attributed mainly to propellant utilisation and beam divergence [S12][S32].
+Krypton's smaller ionisation cross-section and higher ionisation energy also narrow the
+stable operating window; one 300 W-class study found unstable operation below 250 V and
+above 450 V anode voltage [S12]. Linnell and Gallimore found a 5 to 15 percentage point
+reduction in overall efficiency on the NASA-173Mv1 at 6 to 8 kW [S32]. Storage is a separate
+penalty: at 14 MPa and 50 C krypton stores at about one third the density of xenon, though
+the gap closes as temperature falls and at -50 C krypton approaches xenon at 50 C [S12].
+
+Life is less dark than it was. A flight-model SPT-100 ran 205 hours on krypton at 2 kW, 50%
+above its nominal power, holding a steady discharge current and beam profile, with boron
+nitride channel erosion measured by optical profilometry at 100 and 205 hours [S31]. The
+authors could not say whether the thruster would reach the 5860 hours their example
+geosynchronous mission needed, and noted that 5860 hours at that krypton condition puts the
+same energy through the thruster as 8800 hours of nominal xenon operation, against a
+validated xenon capability of about 9000 hours [S31].
 
 Iodine is the most interesting recent change. It is stored as a solid and sublimated at low
 temperature, which removes the high-pressure tank entirely and allows severe miniaturisation.
@@ -306,9 +339,23 @@ in 20 K cryocooler technology for hydrogen and 90 K for oxygen and methane [S21]
 
 ### Open problems
 
-Krypton's efficiency penalty is reported as a range, not a number, and the spread of 6 to 24
-percentage points [S12] is wide enough to change the outcome of a mission trade. The dependence on
-thruster size and operating point is not resolved.
+Krypton's efficiency penalty is now measured on specific thrusters rather than quoted as a
+range, but only on three. The SPT-100 loses eight points of total efficiency at its nominal
+condition [S30] and the BHT-1500-C loses seven to eight [S12], which is a narrow enough band
+to design against; whether it holds at the tens of kilowatts a Mars vehicle needs is
+untested, and the one high-power data point in the literature, a 50 kW thruster reported to
+reach similar efficiency on krypton and xenon [S31], has no published operating table behind
+it here.
+
+Krypton tankage is not characterised in a way a trade study can use. The one-third storage
+density figure [S12] is quoted at a single pressure and temperature, and the mass of a tank
+sized for the resulting volume is what decides whether krypton's propellant saving survives
+to the vehicle level. No source consulted gives tank mass for a krypton system.
+
+Krypton erosion and life remain open. The 205-hour test [S31] is the longest published run
+and is two orders of magnitude short of a qualification life. Its authors could not conclude
+whether the thruster would survive their own example mission, and said plainly that serious
+use of krypton would require long-duration life testing [S31].
 
 Iodine is chemically aggressive. It attacks many spacecraft materials, and long-duration
 compatibility data for grids, cathodes, and external surfaces does not exist at mission timescales.
@@ -373,8 +420,9 @@ presented as settled.
 - `[S11]` Rafalskyi, D., et al., "In-orbit demonstration of an iodine electric propulsion system",
   *Nature*, vol. 599, November 2021. DOI 10.1038/s41586-021-04015-y.
   https://www.nature.com/articles/s41586-021-04015-y
-- `[S12]` "Measurements of a Krypton Fed 1.5 kW Hall Effect Thruster", IEPC-2017-26, 35th
-  International Electric Propulsion Conference, Atlanta, 2017.
+- `[S12]` Szabo, J., Tedrake, R., Kolencik, G., and Pote, B., "Measurements of a Krypton Fed
+  1.5 kW Hall Effect Thruster with a Centrally Located Cathode" (BHT-1500-C), IEPC-2017-26,
+  35th International Electric Propulsion Conference, Atlanta, 2017.
   https://electricrocket.org/IEPC/IEPC_2017_26.pdf
 - `[S13]` "Applied-Field Magnetoplasmadynamic Thrusters for Deep Space Exploration",
   arXiv:2410.17478. https://arxiv.org/pdf/2410.17478
@@ -415,3 +463,14 @@ presented as settled.
   System Architectures and Performances", International Electric Propulsion Conference; and
   "Performance Evaluation of the T6 Ion Engine", *Journal of Propulsion and Power*.
   https://www.semanticscholar.org/paper/493bfc9382080d253e5a6af5a178e21681d302bf
+- `[S30]` Nakles, M. R., Hargus, W. A., Jr., Delgado, J. J., and Corey, R. L., "A Performance
+  Comparison of Xenon and Krypton Propellant on an SPT-100 Hall Thruster", IEPC-2011-003,
+  32nd International Electric Propulsion Conference, Wiesbaden, 2011.
+  https://electricrocket.org/IEPC/IEPC-2011-003.pdf
+- `[S31]` Nakles, M. R., Hargus, W. A., Jr., Delgado, J. J., and Corey, R. L., "A 205 Hour
+  Krypton Propellant Life Test of the SPT-100 Operating at 2 kW", IEPC-2013-347, 33rd
+  International Electric Propulsion Conference, Washington DC, 2013.
+  https://electricrocket.org/IEPC/hu4akp90.pdf
+- `[S32]` Linnell, J. A., and Gallimore, A. D., "Efficiency Analysis of a Hall Thruster
+  Operating with Krypton and Xenon", *Journal of Propulsion and Power*, vol. 22, no. 6,
+  pp. 1402-1418, 2006.

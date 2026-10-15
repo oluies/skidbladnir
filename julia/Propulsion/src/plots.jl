@@ -127,5 +127,83 @@ function make_plots(con, outdir::AbstractString;
     savefig(p, path)
     push!(written, path)
 
+    push!(written, make_krypton_plot(con, outdir; producer = producer))
+
     written
+end
+
+const PROPELLANT_COLOUR = Dict(
+    "krypton" => :mediumseagreen,
+    "xenon" => :steelblue,
+)
+
+"""
+    make_krypton_plot(con, outdir; producer="julia") -> String
+
+Krypton against its matched xenon control on the same thruster.
+
+The dataset holds three measured krypton operating points, each with a xenon control taken
+on the same thruster in the same facility. Plotting the pairs side by side shows the trade
+directly: krypton buys a lower initial mass and pays for it in thrusting time.
+"""
+function make_krypton_plot(con, outdir::AbstractString; producer::AbstractString = "julia")
+    ENV["GKSwstype"] = "100"
+    gr()
+    mkpath(outdir)
+
+    df = query_db(con, """
+        SELECT m.mission_id AS mid, m.name AS mission_name,
+               t.name AS thruster_name, t.propellant,
+               r.initial_mass_kg, r.trip_time_days, r.feasible
+        FROM results r
+        JOIN missions m ON m.mission_id = r.mission_id
+        JOIN thrusters t ON t.thruster_id = r.thruster_id
+        WHERE r.producer = '$producer'
+          AND t.thruster_id IN ('spt100_kr_390v','spt100_kr_nom','spt100_xe_nakles',
+                                'bht1500c_kr','bht1500c_xe')
+        ORDER BY r.mission_id, t.propellant, r.initial_mass_kg
+    """)
+
+    panels = Any[]
+    for mid in ("mars_crew_nominal", "mars_crew_fast", "probe500_nominal")
+        sub = df[df.mid .== mid, :]
+        nrow(sub) == 0 && continue
+        name = first(sub.mission_name)
+        for (col, label) in ((:initial_mass_kg, "initial mass, kg"),
+                             (:trip_time_days, "thrusting time, days"))
+            keep = sub[.!ismissing.(sub[!, col]), :]
+            nrow(keep) == 0 && continue
+            sorted = sort(keep, col)
+            vals = Float64.(sorted[!, col])
+            labels = String.(sorted.thruster_name)
+            cols = [get(PROPELLANT_COLOUR, p, :grey) for p in sorted.propellant]
+            # hatch infeasible rows by drawing them paler
+            alphas = [f ? 1.0 : 0.45 for f in sorted.feasible]
+            n = length(vals)
+            p = bar(
+                1:n, vals;
+                orientation = :h,
+                yticks = (1:n, labels),
+                yflip = true,
+                ylims = (0.4, n + 0.6),
+                legend = false,
+                color = cols,
+                fillalpha = alphas,
+                linewidth = 0,
+                title = "$name\n$label (pale = fails the time cap)",
+                xlabel = label,
+                titlefontsize = 8,
+                tickfontsize = 7,
+                guidefontsize = 8,
+                grid = :x,
+            )
+            push!(panels, p)
+        end
+    end
+
+    p = plot(panels...; layout = (3, 2), size = (1500, 1250),
+             left_margin = 34Plots.mm, bottom_margin = 7Plots.mm, top_margin = 5Plots.mm)
+    path = joinpath(outdir, "krypton_vs_xenon.png")
+    savefig(p, path)
+    path
 end

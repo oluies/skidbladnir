@@ -10,7 +10,7 @@ S08,"Performance and High-Speed Characterization of a 100-kW Nested Hall Thruste
 S09,"Electric Propulsion for the Psyche Mission","IEPC-2019-244, 36th International Electric Propulsion Conference",2019,https://electricrocket.org/2019/244.pdf,conference
 S10,"Review of High-Power Electrostatic and Electrothermal Electric Propulsion","Journal of Propulsion and Power",2022,https://hpepl.ae.gatech.edu/sites/default/files/files/Review%20of%20HP%20ES%20ET%20EP_JPP%20Nov%202022.pdf,journal
 S11,"Rafalskyi, D., et al., In-orbit demonstration of an iodine electric propulsion system","Nature 599; DOI 10.1038/s41586-021-04015-y",2021,https://www.nature.com/articles/s41586-021-04015-y,journal
-S12,"Measurements of a Krypton Fed 1.5 kW Hall Effect Thruster","IEPC-2017-26, 35th International Electric Propulsion Conference",2017,https://electricrocket.org/IEPC/IEPC_2017_26.pdf,conference
+S12,"Szabo, J., Tedrake, R., Kolencik, G., and Pote, B., Measurements of a Krypton Fed 1.5 kW Hall Effect Thruster with a Centrally Located Cathode (BHT-1500-C)","IEPC-2017-26, 35th International Electric Propulsion Conference, Atlanta",2017,https://electricrocket.org/IEPC/IEPC_2017_26.pdf,conference
 S13,"Applied-Field Magnetoplasmadynamic Thrusters for Deep Space Exploration","arXiv:2410.17478",2024,https://arxiv.org/pdf/2410.17478,preprint
 S14,"Polk, J. E., et al., Development of High Power Lithium Magnetoplasmadynamic Thrusters for Human Mars Missions","IEPC-2024, Princeton EPPDyL",2024,https://alfven.princeton.edu/publications/pdf/polk-iepc-2024.pdf,conference
 S15,"Improved Efficiency and Throttling Range of the VX-200 Magnetoplasma Thruster","Journal of Propulsion and Power",2014,https://www.adastrarocket.com/technical-papers-archives/Ben-JPP-2014.pdf,journal
@@ -28,3 +28,6 @@ S26,"Hutchins, M., and Simpson, H., QinetiQ's T6 and T5 Ion Thruster Electric Pr
 S27,"ThrustMe NPT30-I2-1U product datasheet","ThrustMe, Verrieres-le-Buisson",2021,https://www.thrustme.fr/base/stock/ProductBannerFiles/2_thrustme-npt30-i2.pdf,datasheet
 S28,"NSTAR Ion Thruster project page","NASA Glenn Research Center",2000,https://www.grc.nasa.gov/WWW/ion/past/90s/nstar.htm,web_technical
 S29,"Standard atomic weights and first ionisation energies","NIST Atomic Spectra Database and CRC Handbook of Chemistry and Physics",2024,https://physics.nist.gov/asd,reference_data
+S30,"Nakles, M. R., Hargus, W. A., Delgado, J. J., and Corey, R. L., A Performance Comparison of Xenon and Krypton Propellant on an SPT-100 Hall Thruster","IEPC-2011-003, 32nd International Electric Propulsion Conference, Wiesbaden",2011,https://electricrocket.org/IEPC/IEPC-2011-003.pdf,conference
+S31,"Nakles, M. R., Hargus, W. A., Delgado, J. J., and Corey, R. L., A 205 Hour Krypton Propellant Life Test of the SPT-100 Operating at 2 kW","IEPC-2013-347, 33rd International Electric Propulsion Conference, Washington DC",2013,https://electricrocket.org/IEPC/hu4akp90.pdf,conference
+S32,"Linnell, J. A., and Gallimore, A. D., Efficiency Analysis of a Hall Thruster Operating with Krypton and Xenon","Journal of Propulsion and Power, vol. 22, no. 6, pp. 1402-1418",2006,,journal
