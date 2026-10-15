@@ -174,9 +174,13 @@ The dataset holds three measured krypton operating points. Two of them, the BHT-
 the SPT-100 at its nominal condition, have a xenon control measured on the same thruster in
 the same campaign. The third, the SPT-100 at 393 V, comes from a separate life-test paper and
 has no condition-matched xenon run, so it appears alongside the 302 V nominal control rather
-than against a true control. Plotting them together shows the trade: krypton buys a lower
-initial mass and pays for it in thrusting time. Rows that fail their mission's time cap are
-drawn pale.
+than against a true control.
+
+Three panels per mission: initial mass, tank dry mass and thrusting time. Krypton's higher
+specific impulse does buy a smaller propellant load, but its tank is about three times
+xenon's for a similar load, so once tankage is charged against the vehicle krypton loses on
+both initial mass and thrusting time in every matched pair. The tank panel is the mechanism.
+Rows that fail their mission's time cap are drawn pale.
 """
 function make_krypton_plot(con, outdir::AbstractString; producer::AbstractString = "julia")
     ENV["GKSwstype"] = "100"

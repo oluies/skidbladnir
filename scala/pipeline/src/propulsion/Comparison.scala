@@ -52,6 +52,32 @@ object Comparison:
       val mr = Physics.massRatio(mission.deltaVMS, ve)
       val zeta = Physics.propellantMassFraction(mission.deltaVMS, ve)
 
+      // Every branch returns a row of exactly these fields. Building it once and deriving
+      // the four outcomes with copy keeps them the same shape, so adding a results column is
+      // one edit rather than four that have to stay in lockstep.
+      val base = ComparisonResult(
+        runId = runId,
+        producer = producer,
+        missionId = mission.missionId,
+        thrusterId = t.thrusterId,
+        nThrusters = None,
+        exhaustVelocityMS = Some(ve),
+        massRatio = Some(mr),
+        propellantMassFraction = Some(zeta),
+        propellantMassKg = None,
+        initialMassKg = None,
+        powerPlantMassKg = None,
+        tankMassKg = None,
+        tankMassFraction = Some(tankFraction),
+        thrustTotalN = t.thrustN,
+        powerTotalW = None,
+        tripTimeDays = None,
+        meetsTimeConstraint = None,
+        feasible = false,
+        alphaKgPerKW = None,
+        notes = ""
+      )
+
       val electric = t.isElectricComplete && mission.powerAvailableW.isDefined
 
       if electric then
@@ -65,56 +91,37 @@ object Comparison:
         val powerPlantMass = alpha * pAvail / 1000.0
         val baseInert = mission.payloadMassKg + powerPlantMass + n * unitMass
 
+        val withPower = base.copy(
+          nThrusters = Some(n),
+          powerPlantMassKg = Some(powerPlantMass),
+          thrustTotalN = t.thrustN.map(_ * n),
+          powerTotalW = Some(pTotal),
+          alphaKgPerKW = Some(alpha)
+        )
+
         Physics.inertMassWithTank(baseInert, mr, tankFraction) match
           case None =>
-            ComparisonResult(
-              runId, producer, mission.missionId, t.thrusterId,
-              nThrusters = Some(n),
-              exhaustVelocityMS = Some(ve),
-              massRatio = Some(mr),
-              propellantMassFraction = Some(zeta),
-              propellantMassKg = None,
-              initialMassKg = None,
-              powerPlantMassKg = Some(powerPlantMass),
-              tankMassKg = None,
-              tankMassFraction = Some(tankFraction),
-              thrustTotalN = t.thrustN.map(_ * n),
-              powerTotalW = Some(pTotal),
-              tripTimeDays = None,
-              meetsTimeConstraint = None,
-              feasible = false,
-              alphaKgPerKW = Some(alpha),
+            withPower.copy(
               notes = f"tankage diverges: tank fraction $tankFraction%.3f times (MR-1) ${mr - 1}%.3f reaches 1, no closed vehicle"
             )
           case Some(inertMass) =>
             val mp = inertMass * (mr - 1.0)
             val tankMass = tankFraction * mp
             val m0 = inertMass * mr
-            val tripSeconds = Physics.transferTimeSeconds(mp, ve, eta, pTotal)
-            val tripDays = Physics.secondsToDays(tripSeconds)
+            val tripDays = Physics.secondsToDays(Physics.transferTimeSeconds(mp, ve, eta, pTotal))
             val meetsTime = mission.maxTripTimeDays.map(tripDays <= _)
             val sane = mr.isFinite && mr <= MaxMassRatio && m0.isFinite
             val massNote =
               if t.massKg.isDefined then "thruster mass from source"
               else f"thruster mass assumed at $ThrusterSpecificMassKgPerKW%.1f kg/kW"
 
-            ComparisonResult(
-              runId, producer, mission.missionId, t.thrusterId,
-              nThrusters = Some(n),
-              exhaustVelocityMS = Some(ve),
-              massRatio = Some(mr),
-              propellantMassFraction = Some(zeta),
+            withPower.copy(
               propellantMassKg = Some(mp),
               initialMassKg = Some(m0),
-              powerPlantMassKg = Some(powerPlantMass),
               tankMassKg = Some(tankMass),
-              tankMassFraction = Some(tankFraction),
-              thrustTotalN = t.thrustN.map(_ * n),
-              powerTotalW = Some(pTotal),
               tripTimeDays = Some(tripDays),
               meetsTimeConstraint = meetsTime,
               feasible = sane && meetsTime.getOrElse(true),
-              alphaKgPerKW = Some(alpha),
               notes = s"power-limited electric; $massNote; " +
                 f"power plant $powerPlantMass%.0f kg at $alpha%.1f kg/kW; " +
                 f"tank $tankMass%.0f kg at f=$tankFraction%.3f"
@@ -131,23 +138,7 @@ object Comparison:
 
         Physics.inertMassWithTank(mission.payloadMassKg, mr, tankFraction) match
           case None =>
-            ComparisonResult(
-              runId, producer, mission.missionId, t.thrusterId,
-              nThrusters = None,
-              exhaustVelocityMS = Some(ve),
-              massRatio = Some(mr),
-              propellantMassFraction = Some(zeta),
-              propellantMassKg = None,
-              initialMassKg = None,
-              powerPlantMassKg = None,
-              tankMassKg = None,
-              tankMassFraction = Some(tankFraction),
-              thrustTotalN = t.thrustN,
-              powerTotalW = None,
-              tripTimeDays = None,
-              meetsTimeConstraint = None,
-              feasible = false,
-              alphaKgPerKW = None,
+            base.copy(
               notes = f"$why; tankage diverges at f=$tankFraction%.3f and MR=$mr%.3f"
             )
           case Some(inertMass) =>
@@ -156,23 +147,11 @@ object Comparison:
             val m0 = inertMass * mr
             val sane = mr.isFinite && mr <= MaxMassRatio && m0.isFinite
 
-            ComparisonResult(
-              runId, producer, mission.missionId, t.thrusterId,
-              nThrusters = None,
-              exhaustVelocityMS = Some(ve),
-              massRatio = Some(mr),
-              propellantMassFraction = Some(zeta),
+            base.copy(
               propellantMassKg = Some(mp),
               initialMassKg = Some(m0),
-              powerPlantMassKg = None,
               tankMassKg = Some(tankMass),
-              tankMassFraction = Some(tankFraction),
-              thrustTotalN = t.thrustN,
-              powerTotalW = None,
-              tripTimeDays = None,
-              meetsTimeConstraint = None,
               feasible = sane,
-              alphaKgPerKW = None,
               notes = f"$why; engine dry mass excluded; tank $tankMass%.0f kg at f=$tankFraction%.3f"
             )
     }

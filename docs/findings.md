@@ -86,7 +86,8 @@ Tankage changed the order here. VASIMR ranked second before the tank model was a
 now outside the top six, because argon stores at 500 kg/m3 and 300 bar and carries a 33.6
 percent tank fraction, the worst of any propellant in the set. The three lithium MPD
 thrusters moved the other way: lithium is a dense unpressurised solid, so its tank is 1.5
-percent and two of them gained places.
+percent and all three gained a place, the 200 kW unit from third to second, the 32 kW from
+sixth to fifth and the 150 kW from seventh to sixth.
 
 Thruster count is the discriminator the mass column hides. HiPEP leads on mass and needs 81
 units; T6 and NEXT need 444 and 289. The candidates needing ten or fewer units are the
@@ -112,11 +113,15 @@ on time, not on mass. Power-limited thrusting time scales with the square of exh
 at fixed power, so the high specific impulse that wins the nominal mission is exactly what
 loses the fast one.
 
-The three nuclear thermal rows are absent from this table only because it is ranked on a
-column they do have. On mass alone the NASEM reference NTP sits at 492 t, Pewee at 550 t and
-Phoebus-2A at 581 t, which would place them third, fifth and sixth; the comparison has
-nothing to say about whether any of them meets the 210-day requirement, because the model
-that produces a trip time does not apply to them.
+The three nuclear thermal rows are feasible here and sit below the table, because once
+tankage is charged they are the three heaviest vehicles in the feasible set: the NASEM
+reference NTP at 1067 t, Pewee at 1431 t and Phoebus-2A at 1696 t, ranking seventh, eighth
+and ninth of nine. Hydrogen is the reason. At 70.85 kg/m3 it carries a 12.0 percent tank
+fraction against xenon's 5.5, and it is combined with mass ratios above 5, so the tank
+compounds against the propellant rather than trimming it. Their feasibility flag means only
+that the rocket equation closes: the comparison has nothing to say about whether any of them
+meets the 210-day requirement, because the model that produces a trip time does not apply to
+them.
 
 Within the electric survivors, propellant is 44 to 62 percent of the vehicle, against 8 to 17
 percent on the nominal mission. Doubling delta-v and halving the time cap moves the design
@@ -220,7 +225,7 @@ tank mass and thrusting time, with the rows that fail their time cap drawn pale.
 The Scala and Julia pipelines implement the relations separately rather than sharing code.
 The Julia test suite joins both producers' rows in the `results` table and requires
 agreement to 1e-9 relative. All 124 rows agree on initial mass, propellant mass, tank mass,
-trip time, thruster count and feasibility. 1557 Julia tests and 35 Scala self-tests pass, and
+trip time, thruster count and feasibility. 1560 Julia tests and 35 Scala self-tests pass, and
 SQL validation reports no errors over 17 checks.
 
 The Lean development proves the relations the comparison uses, including
@@ -251,13 +256,16 @@ the feasible set entirely, because the extra propellant pushes its thrusting tim
 a quantity nobody has measured is enough to unseat the first-ranked candidate.
 
 Varying thruster specific mass from 2 to 10 kg/kW moves HiPEP's initial mass from 147 t to
-164 t without changing the top of the order, the lithium MPD thrusters holding second through
-fifth throughout because their fixed-count advantage is unaffected by a per-kilowatt
-assumption.
+164 t, and it does change the order beneath it. At 10 kg/kW NSTAR rises to second at 175 t,
+because its sourced 8.2 kg dry mass [S28] is immune to the assumption while every
+assumed-mass candidate grows around it; the MAI 200 kW lithium thruster drops to third at
+176 t, with T6 and NEXT at 179 and 180 t behind it.
 
 Tank strength matters most to whichever propellant stores worst. Doubling the effective wall
-strength, which halves every tank fraction, brings VASIMR back into the Mars top five at
-fourth place on 167 t; halving it leaves VASIMR out and pushes T6's tank from 1.4 t to 2.7 t.
+strength halves the pressure term and leaves the structural floor alone, so xenon goes from
+5.5 to 3.0 percent and argon from 33.6 to 17.6, while unpressurised lithium and iodine do not
+move at all. That is enough to bring VASIMR back into the Mars top five at fourth place on
+167 t; halving the wall strength leaves VASIMR out and pushes T6's tank from 1.4 t to 2.7 t.
 Argon's position is therefore a statement about the tank assumption rather than about the
 thruster.
 

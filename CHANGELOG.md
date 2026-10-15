@@ -245,9 +245,35 @@ four figures render, Lean builds and all 21 theorems report only the three stand
   the vehicle closes, it is strictly increasing in tank fraction and never below the base, and
   the tank fraction is strictly decreasing in storage density and increasing in pressure. 30
   theorems total, all depending only on the three standard axioms, no sorry.
-- Tests: 1555 Julia, 35 Scala. New Julia tests pin the divergence condition and assert the
+- Tests: 1560 Julia, 35 Scala. New Julia tests pin the divergence condition and assert the
   krypton reversal directly, so it cannot regress silently.
 - scripts/sensitivity.jl now varies tank wall strength as a third axis. Doubling it brings
   VASIMR back into the Mars top five; halving it does not. Argon's position is a statement
   about the tank assumption rather than about the thruster.
 - docs/figures/krypton_vs_xenon.png gains a tank mass column, which is the mechanism.
+
+### Review 1975 corrections
+- The fast-Mars nuclear thermal paragraph quoted pre-tank masses, 492/550/581 t. With
+  hydrogen's 12.0 percent tank fraction charged the three rows are 1067, 1431 and 1696 t, and
+  they rank seventh, eighth and ninth of nine rather than third, fifth and sixth. The lead
+  sentence also claimed the rows were absent from a table ranked on a column they have, which
+  made no sense; they are absent because they are the heaviest.
+- The thruster dry mass sensitivity claim was false and had replaced a correct one. At
+  10 kg/kW NSTAR rises to second at 175 t, because its sourced 8.2 kg dry mass is immune to an
+  assumption that inflates every other candidate. Restored, and dropped the claim that the top
+  of the order does not change.
+- Doubling the tank wall strength halves the pressure term only; the structural floor is
+  untouched. Xenon goes 5.5 to 3.0 percent and argon 33.6 to 17.6, while unpressurised lithium
+  and iodine do not move. The script already did this correctly; only the prose was wrong.
+- make_krypton_plot's docstring still described krypton as buying a lower initial mass, the
+  conclusion the tank model reverses.
+- All three lithium MPD rows gained a place under tankage, not two.
+- compare_one and Comparison.compare each built four near-identical row literals. Both now
+  build the row once and derive the branches by merge and copy, so a new results column is one
+  edit per language rather than four.
+
+### Test count determinism
+The suite count moved between runs because the krypton reversal test queried the database for
+this producer's rows, which may not exist yet on a fresh build. It now computes from the
+in-memory results instead, so the count is stable: 1560 with the Scala rows present for the
+cross-implementation check, 816 without.

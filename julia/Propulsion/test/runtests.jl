@@ -227,23 +227,17 @@ using DataFrames
         @testset "tankage reverses the krypton matched pairs" begin
             # Without a tank model krypton wins on initial mass in both matched pairs.
             # Charging the tank against the vehicle reverses both, which is the result the
-            # tank model was added to settle.
-            got = query_db(con, """
-                SELECT t.thruster_id, t.propellant, r.initial_mass_kg, r.tank_mass_kg
-                FROM results r JOIN thrusters t USING (thruster_id)
-                WHERE r.producer = 'julia' AND r.mission_id = 'probe500_nominal'
-                  AND t.thruster_id IN ('bht1500c_kr','bht1500c_xe',
-                                        'spt100_kr_nom','spt100_xe_nakles')
-            """)
-            if nrow(got) == 4
-                m = Dict(r.thruster_id => r for r in eachrow(got))
-                @test m["bht1500c_xe"].initial_mass_kg < m["bht1500c_kr"].initial_mass_kg
-                @test m["spt100_xe_nakles"].initial_mass_kg < m["spt100_kr_nom"].initial_mass_kg
+            # tank model was added to settle. Computed from `results` rather than queried,
+            # so the check does not depend on whether this producer's rows are already in
+            # the database.
+            probe = results[results.mission_id .== "probe500_nominal", :]
+            by_id = Dict(r.thruster_id => r for r in eachrow(probe))
+            for (kr, xe) in (("bht1500c_kr", "bht1500c_xe"),
+                             ("spt100_kr_nom", "spt100_xe_nakles"))
+                @test haskey(by_id, kr) && haskey(by_id, xe)
+                @test by_id[xe].initial_mass_kg < by_id[kr].initial_mass_kg
                 # The krypton tank is the reason, not the propellant mass.
-                @test m["bht1500c_kr"].tank_mass_kg > 2 * m["bht1500c_xe"].tank_mass_kg
-            else
-                @info "results not populated for this mission; run the pipeline first"
-                @test true
+                @test by_id[kr].tank_mass_kg > 2 * by_id[xe].tank_mass_kg
             end
         end
 

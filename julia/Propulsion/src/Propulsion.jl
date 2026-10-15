@@ -316,6 +316,30 @@ function compare_one(mission, thruster; tank_fraction::Real = 0.0)
     zeta = propellant_mass_fraction(mission.delta_v_m_s, ve)
     f_tank = float(tank_fraction)
 
+    # Every branch returns a row of exactly these fields. Building it once and merging the
+    # per-branch overrides keeps the four outcomes the same shape, so adding a results column
+    # is one edit rather than four that have to stay in lockstep.
+    base_row = (
+        mission_id = mission.mission_id,
+        thruster_id = thruster.thruster_id,
+        n_thrusters = missing,
+        exhaust_velocity_m_s = ve,
+        mass_ratio = mr,
+        propellant_mass_fraction = zeta,
+        propellant_mass_kg = missing,
+        initial_mass_kg = missing,
+        power_plant_mass_kg = missing,
+        tank_mass_kg = missing,
+        tank_mass_fraction = f_tank,
+        thrust_total_N = ismiss(thruster.thrust_mN) ? missing : thruster.thrust_mN / 1000,
+        power_total_W = missing,
+        trip_time_days = missing,
+        meets_time_constraint = missing,
+        feasible = false,
+        alpha_kg_per_kW = missing,
+        notes = "",
+    )
+
     electric =
         thruster.power_basis == "electrical_input" &&
         !ismiss(thruster.thrust_mN) &&
@@ -336,129 +360,77 @@ function compare_one(mission, thruster; tank_fraction::Real = 0.0)
         power_plant_mass = alpha * p_avail / 1000
         base_inert = mission.payload_mass_kg + power_plant_mass + n * unit_mass
 
+        common = (
+            n_thrusters = n,
+            power_plant_mass_kg = power_plant_mass,
+            thrust_total_N = n * thruster.thrust_mN / 1000,
+            power_total_W = p_total,
+            alpha_kg_per_kW = alpha,
+        )
+
         inert_mass = inert_mass_with_tank(base_inert, mr, f_tank)
         if inert_mass === nothing
             # Tankage diverges: the tank needed to hold the propellant outweighs what the
             # propellant buys back, so no finite vehicle closes.
-            return (
-                mission_id = mission.mission_id,
-                thruster_id = thruster.thruster_id,
-                n_thrusters = n,
-                exhaust_velocity_m_s = ve,
-                mass_ratio = mr,
-                propellant_mass_fraction = zeta,
-                propellant_mass_kg = missing,
-                initial_mass_kg = missing,
-                power_plant_mass_kg = power_plant_mass,
-                tank_mass_kg = missing,
-                tank_mass_fraction = f_tank,
-                thrust_total_N = n * thruster.thrust_mN / 1000,
-                power_total_W = p_total,
-                trip_time_days = missing,
-                meets_time_constraint = missing,
-                feasible = false,
-                alpha_kg_per_kW = alpha,
+            return merge(base_row, common, (
                 notes = @sprintf(
                     "tankage diverges: tank fraction %.3f times (MR-1) %.3f reaches 1, no closed vehicle",
                     f_tank, mr - 1
                 ),
-            )
+            ))
         end
 
         mp = inert_mass * (mr - 1)
-        tank_mass = f_tank * mp
-        m0 = inert_mass * mr
         trip_days = seconds_to_days(transfer_time_seconds(mp, ve, eta, p_total))
         meets = ismiss(mission.max_trip_time_days) ? missing :
                 trip_days <= mission.max_trip_time_days
-        sane = isfinite(mr) && mr <= MAX_MASS_RATIO && isfinite(m0)
+        sane = isfinite(mr) && mr <= MAX_MASS_RATIO && isfinite(inert_mass * mr)
         mass_note =
             ismiss(thruster.mass_kg) ?
             @sprintf("thruster mass assumed at %.1f kg/kW", THRUSTER_SPECIFIC_MASS_KG_PER_KW) :
             "thruster mass from source"
 
-        return (
-            mission_id = mission.mission_id,
-            thruster_id = thruster.thruster_id,
-            n_thrusters = n,
-            exhaust_velocity_m_s = ve,
-            mass_ratio = mr,
-            propellant_mass_fraction = zeta,
+        return merge(base_row, common, (
             propellant_mass_kg = mp,
-            initial_mass_kg = m0,
-            power_plant_mass_kg = power_plant_mass,
-            tank_mass_kg = tank_mass,
-            tank_mass_fraction = f_tank,
-            thrust_total_N = n * thruster.thrust_mN / 1000,
-            power_total_W = p_total,
+            initial_mass_kg = inert_mass * mr,
+            tank_mass_kg = f_tank * mp,
             trip_time_days = trip_days,
             meets_time_constraint = meets,
             feasible = sane && (meets === missing ? true : meets),
-            alpha_kg_per_kW = alpha,
             notes = @sprintf(
                 "power-limited electric; %s; power plant %.0f kg at %.1f kg/kW; tank %.0f kg at f=%.3f",
-                mass_note, power_plant_mass, alpha, tank_mass, f_tank
+                mass_note, power_plant_mass, alpha, f_tank * mp, f_tank
             ),
-        )
+        ))
     else
-        base_inert = mission.payload_mass_kg
-        inert_mass = inert_mass_with_tank(base_inert, mr, f_tank)
+        # Nuclear thermal, or any row without the full electric quadruple. The power-limited
+        # transfer model does not apply, so trip time is left missing rather than computed
+        # from a model that does not fit.
         why =
             thruster.power_basis == "reactor_thermal" ?
             "nuclear thermal: power-limited transfer model does not apply, trip time not evaluated" :
             ismiss(mission.power_available_W) ? "mission states no available power" :
             "row lacks one of thrust, Isp, power or efficiency"
 
+        inert_mass = inert_mass_with_tank(mission.payload_mass_kg, mr, f_tank)
         if inert_mass === nothing
-            return (
-                mission_id = mission.mission_id,
-                thruster_id = thruster.thruster_id,
-                n_thrusters = missing,
-                exhaust_velocity_m_s = ve,
-                mass_ratio = mr,
-                propellant_mass_fraction = zeta,
-                propellant_mass_kg = missing,
-                initial_mass_kg = missing,
-                power_plant_mass_kg = missing,
-                tank_mass_kg = missing,
-                tank_mass_fraction = f_tank,
-                thrust_total_N = ismiss(thruster.thrust_mN) ? missing : thruster.thrust_mN / 1000,
-                power_total_W = missing,
-                trip_time_days = missing,
-                meets_time_constraint = missing,
-                feasible = false,
-                alpha_kg_per_kW = missing,
+            return merge(base_row, (
                 notes = @sprintf("%s; tankage diverges at f=%.3f and MR=%.3f", why, f_tank, mr),
-            )
+            ))
         end
 
         mp = inert_mass * (mr - 1)
-        tank_mass = f_tank * mp
-        m0 = inert_mass * mr
-        sane = isfinite(mr) && mr <= MAX_MASS_RATIO && isfinite(m0)
+        sane = isfinite(mr) && mr <= MAX_MASS_RATIO && isfinite(inert_mass * mr)
 
-        return (
-            mission_id = mission.mission_id,
-            thruster_id = thruster.thruster_id,
-            n_thrusters = missing,
-            exhaust_velocity_m_s = ve,
-            mass_ratio = mr,
-            propellant_mass_fraction = zeta,
+        return merge(base_row, (
             propellant_mass_kg = mp,
-            initial_mass_kg = m0,
-            power_plant_mass_kg = missing,
-            tank_mass_kg = tank_mass,
-            tank_mass_fraction = f_tank,
-            thrust_total_N = ismiss(thruster.thrust_mN) ? missing : thruster.thrust_mN / 1000,
-            power_total_W = missing,
-            trip_time_days = missing,
-            meets_time_constraint = missing,
+            initial_mass_kg = inert_mass * mr,
+            tank_mass_kg = f_tank * mp,
             feasible = sane,
-            alpha_kg_per_kW = missing,
             notes = @sprintf(
-                "%s; engine dry mass excluded; tank %.0f kg at f=%.3f", why, tank_mass, f_tank
+                "%s; engine dry mass excluded; tank %.0f kg at f=%.3f", why, f_tank * mp, f_tank
             ),
-        )
+        ))
     end
 end
 
