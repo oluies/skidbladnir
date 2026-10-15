@@ -381,10 +381,12 @@ function compare_one(mission, thruster; tank_fraction::Real = 0.0)
         end
 
         mp = inert_mass * (mr - 1)
+        tank_mass = f_tank * mp
+        m0 = inert_mass * mr
         trip_days = seconds_to_days(transfer_time_seconds(mp, ve, eta, p_total))
         meets = ismiss(mission.max_trip_time_days) ? missing :
                 trip_days <= mission.max_trip_time_days
-        sane = isfinite(mr) && mr <= MAX_MASS_RATIO && isfinite(inert_mass * mr)
+        sane = isfinite(mr) && mr <= MAX_MASS_RATIO && isfinite(m0)
         mass_note =
             ismiss(thruster.mass_kg) ?
             @sprintf("thruster mass assumed at %.1f kg/kW", THRUSTER_SPECIFIC_MASS_KG_PER_KW) :
@@ -392,14 +394,14 @@ function compare_one(mission, thruster; tank_fraction::Real = 0.0)
 
         return merge(base_row, common, (
             propellant_mass_kg = mp,
-            initial_mass_kg = inert_mass * mr,
-            tank_mass_kg = f_tank * mp,
+            initial_mass_kg = m0,
+            tank_mass_kg = tank_mass,
             trip_time_days = trip_days,
             meets_time_constraint = meets,
             feasible = sane && (meets === missing ? true : meets),
             notes = @sprintf(
                 "power-limited electric; %s; power plant %.0f kg at %.1f kg/kW; tank %.0f kg at f=%.3f",
-                mass_note, power_plant_mass, alpha, f_tank * mp, f_tank
+                mass_note, power_plant_mass, alpha, tank_mass, f_tank
             ),
         ))
     else
@@ -420,15 +422,17 @@ function compare_one(mission, thruster; tank_fraction::Real = 0.0)
         end
 
         mp = inert_mass * (mr - 1)
-        sane = isfinite(mr) && mr <= MAX_MASS_RATIO && isfinite(inert_mass * mr)
+        tank_mass = f_tank * mp
+        m0 = inert_mass * mr
+        sane = isfinite(mr) && mr <= MAX_MASS_RATIO && isfinite(m0)
 
         return merge(base_row, (
             propellant_mass_kg = mp,
-            initial_mass_kg = inert_mass * mr,
-            tank_mass_kg = f_tank * mp,
+            initial_mass_kg = m0,
+            tank_mass_kg = tank_mass,
             feasible = sane,
             notes = @sprintf(
-                "%s; engine dry mass excluded; tank %.0f kg at f=%.3f", why, f_tank * mp, f_tank
+                "%s; engine dry mass excluded; tank %.0f kg at f=%.3f", why, tank_mass, f_tank
             ),
         ))
     end

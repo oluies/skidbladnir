@@ -100,7 +100,10 @@ try
                       rank(mission, thrusters; alpha = base_alpha, tsm = tsm))
         end
 
-        # A weaker tank wall doubles every tank fraction; a stronger one halves them.
+        # psi_scale multiplies the wall strength, so it scales the pressure term only. The
+        # kappa/rho structural floor is untouched, and unpressurised stores do not move at
+        # all: at psi x2 xenon goes 5.5 to 3.0 percent and argon 33.6 to 17.6, while lithium
+        # stays at 1.5 and iodine at 0.2.
         for psi in (0.5, 1.0, 2.0)
             show_case(mission,
                       @sprintf("alpha = %.0f kg/kW, thruster %.0f kg/kW, tank psi x%.1f",

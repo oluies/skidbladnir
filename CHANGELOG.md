@@ -277,3 +277,13 @@ The suite count moved between runs because the krypton reversal test queried the
 this producer's rows, which may not exist yet on a fresh build. It now computes from the
 in-memory results instead, so the count is stable: 1560 with the Scala rows present for the
 cross-implementation check, 816 without.
+
+### Review 1976 corrections
+- scripts/sensitivity.jl still carried the claim the previous commit corrected in two
+  documents, as a code comment: "a weaker tank wall doubles every tank fraction". psi_scale
+  divides only the pressure term, so unpressurised lithium and iodine do not move at all.
+  Reworded with the actual numbers.
+- The Julia refactor had dropped the m0 and tank_mass locals and recomputed inert_mass * mr
+  and f_tank * mp inline at each use, which reintroduced the duplication the refactor existed
+  to remove and diverged from the Scala twin. Both branches now name the three locals, as
+  Comparison.scala does.
