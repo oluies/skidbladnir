@@ -79,7 +79,7 @@ failure is the result.
 | 7 | Phoebus-2A | nuclear thermal | hydrogen | 581 229 | 491 229 | 0.845 | not evaluated | - |
 
 Every gridded ion thruster fails, as do all three lithium MPD thrusters, VASIMR and all
-three krypton rows, each of which fails where its matched xenon control passes. They
+three krypton rows, each failing where the xenon it is set against passes. They
 fail on time, not on mass. The power-limited thrusting time scales with the square of
 exhaust velocity at fixed power, so the high specific impulse that wins the nominal mission
 is exactly what loses the fast one. The survivors are the low-Isp, high-thrust-density Hall
@@ -133,9 +133,13 @@ ground qualification [S02]. For a 500 kg probe the defensible choice is NEXT or 
 
 ## Krypton against xenon on matched hardware
 
-The dataset carries three measured krypton operating points, each with a xenon control taken
-on the same thruster in the same facility, so the propellant can be compared without going
-through a correction factor. The pairs behave the same way on both reference missions.
+The dataset carries three measured krypton operating points. Two of them have a xenon control
+on the same thruster in the same facility, measured in the same campaign, so for those two the
+propellant can be compared without going through a correction factor. The third, the SPT-100 at
+393 V, comes from a separate life-test paper [S31] and has no condition-matched xenon run; where
+it is set against xenon below it is against the 302 V nominal control from [S30], which differs
+in discharge voltage and flow as well as propellant. The two true pairs behave the same way on
+both reference missions.
 
 Crewed Mars nominal:
 
@@ -163,11 +167,12 @@ up as less propellant while its lower efficiency shows up as a longer burn. Wher
 trip-time cap is slack, krypton looks better.
 
 Where the cap binds, the sign reverses completely. On the fast Mars mission all three krypton
-rows fail the 210-day limit while all three xenon controls pass: the BHT-1500-C needs 225.8
-days on krypton against 186.8 on xenon, and the SPT-100 at 393 V needs 239.5 against 202.4.
-Krypton is not a drop-in substitution whose cost is a fixed efficiency penalty; it moves a
-vehicle along the mass-against-time trade, and which direction counts as better depends
-entirely on which constraint is active.
+rows fail the 210-day limit while both xenon controls pass: the BHT-1500-C needs 225.8 days on
+krypton against 186.8 on xenon, which is a like-for-like pair, and the SPT-100 at 393 V needs
+239.5 days against 202.4 for the 302 V xenon control, which is not. Krypton is not a drop-in
+substitution whose cost is a fixed efficiency penalty; it moves a vehicle along the
+mass-against-time trade, and which direction counts as better depends entirely on which
+constraint is active.
 
 Two things keep this from being a recommendation. The first is tankage, which the model does
 not carry. For the probe, the BHT-1500-C needs 636 kg of krypton in 0.98 m³ against 722 kg of
@@ -302,11 +307,12 @@ and auditable, but it does not make them right.
 
 Krypton is compared here without a tank model, which is the one thing that could overturn the
 matched-pair result above. Iodine appears in the propellants table and in the survey but
-contributes only the NPT30-I2, a 1 mN cubesat thruster that fails both reference missions on
-thrust; there is no kilowatt-class iodine operating point to add, because none has been
-published [S11].
+contributes only the NPT30-I2, a 1 mN cubesat thruster that clears both probe missions and
+fails both crewed Mars missions on the trip-time cap, needing 466 days against the 365-day
+limit and 768 against the 210-day one; there is no kilowatt-class iodine operating point to
+add, because none has been published [S11].
 
 Argon is represented only by VASIMR, which is a 200 kW laboratory device run in one-to-two
-minute pulses [S15]. Its third place on the crewed Mars nominal mission rests on a peak
+minute pulses [S15]. Its second place on the crewed Mars nominal mission rests on a peak
 performance point, not on anything sustained, and the longest continuous run of the follow-on
 hardware was 88 hours at 80 kW [S16].

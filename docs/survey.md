@@ -275,8 +275,10 @@ propulsion can visibly move.
 Krypton is the first substitution. It is cheaper and more abundant, and its lower atomic mass
 gives it a theoretical specific impulse about 25% above xenon at the same discharge potential
 [S12]. The measured picture is worse than the theory, and the dataset now carries three
-measured krypton operating points with a matched xenon control for each, so the penalty can
-be read off directly rather than taken as a range.
+measured krypton operating points, two of them with a xenon control taken on the same thruster
+in the same campaign, so the penalty can be read off directly rather than taken as a range.
+The third, the SPT-100 at 393 V, comes from the separate life-test paper [S31] and has no
+condition-matched xenon run.
 
 | thruster | propellant | power W | Isp s | total efficiency | thrust mN |
 |---|---|---|---|---|---|
@@ -307,7 +309,11 @@ stable operating window; one 300 W-class study found unstable operation below 25
 above 450 V anode voltage [S12]. Linnell and Gallimore found a 5 to 15 percentage point
 reduction in overall efficiency on the NASA-173Mv1 at 6 to 8 kW [S32]. Storage is a separate
 penalty: at 14 MPa and 50 C krypton stores at about one third the density of xenon, though
-the gap closes as temperature falls and at -50 C krypton approaches xenon at 50 C [S12].
+the gap closes as temperature falls and at -50 C krypton approaches xenon at 50 C [S12]. The
+representative densities carried in the propellants table, 650 against 1600 kg/m3 at 293 K,
+give a milder ratio of about 41%, so the storage penalty quoted in docs/findings.md is 2.2
+times the volume rather than three times; the two figures are at different conditions and do
+not conflict.
 
 Life is less dark than it was. A flight-model SPT-100 ran 205 hours on krypton at 2 kW, 50%
 above its nominal power, holding a steady discharge current and beam profile, with boron
@@ -352,10 +358,11 @@ density figure [S12] is quoted at a single pressure and temperature, and the mas
 sized for the resulting volume is what decides whether krypton's propellant saving survives
 to the vehicle level. No source consulted gives tank mass for a krypton system.
 
-Krypton erosion and life remain open. The 205-hour test [S31] is the longest published run
-and is two orders of magnitude short of a qualification life. Its authors could not conclude
-whether the thruster would survive their own example mission, and said plainly that serious
-use of krypton would require long-duration life testing [S31].
+Krypton erosion and life remain open. The 205-hour test [S31] is the longest published krypton
+run on any thruster, about forty times short of the roughly 9000 hours validated on xenon for
+the same hardware and twenty-nine times short of the 5860 hours its authors' own example
+mission needed. They could not conclude whether the thruster would survive that mission, and
+said plainly that serious use of krypton would require long-duration life testing [S31].
 
 Iodine is chemically aggressive. It attacks many spacecraft materials, and long-duration
 compatibility data for grids, cathodes, and external surfaces does not exist at mission timescales.

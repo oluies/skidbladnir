@@ -128,8 +128,8 @@ four figures render, Lean builds and all 21 theorems report only the three stand
 ## 2026-10-15 (later)
 
 ### Krypton thruster data from measured operating points
-- Added three measured krypton operating points, each with a xenon control taken on the same
-  thruster in the same facility, so the propellant can be compared without a correction
+- Added three measured krypton operating points, two of them with a xenon control taken on the
+  same thruster in the same campaign, so the propellant can be compared without a correction
   factor. Thruster count goes from 26 to 31, result rows from 104 to 124, feasible from 86
   to 103.
 - spt100_kr_390v is the strongest row in the whole dataset: thrust 86.7 mN, Isp 1966 s, power
@@ -150,7 +150,7 @@ four figures render, Lean builds and all 21 theorems report only the three stand
   At fixed available power, Isp sets propellant mass and efficiency sets thrust, so krypton's
   trade lands on different axes.
 - Where the time cap binds the sign reverses. On the fast Mars mission all three krypton rows
-  fail the 210-day limit while all three xenon controls pass.
+  fail the 210-day limit while both xenon controls pass.
 - The comparison carries no tank model, which is the one thing that could overturn this. For
   the probe, krypton saves 86 kg of propellant and asks for 2.2 times the tank volume.
 - Krypton reaches no higher than fourteenth on the probe and enters no Mars top six. The
@@ -162,10 +162,33 @@ four figures render, Lean builds and all 21 theorems report only the three stand
 - docs/survey.md krypton section rewritten around the measured points, with a table of the
   five rows and their provenance. Krypton open problems rewritten: the efficiency penalty is
   now measured rather than a range, but tankage and life remain open. The 205-hour test is
-  the longest published krypton run and is two orders of magnitude short of qualification.
+  the longest published krypton run and is about forty times short of the roughly 9000 hours
+  validated on xenon for the same thruster.
 - docs/findings.md gains a matched-hardware section, updated counts throughout, and a
   rewritten throughput unknown that now uses the SPT-100 qualified figure of 2.71 MN-s, about
   183 kg of xenon per thruster, as the anchor instead of the PPS-1350-G flight accumulation.
 - New figure docs/figures/krypton_vs_xenon.png plots the pairs across three missions with
   time-cap failures drawn pale.
 - Sensitivity conclusions are unchanged; the new rows enter no top five in any case tried.
+
+### Review 1972 corrections
+- The claim that all three krypton points had a matched xenon control was wrong. Only two do,
+  the BHT-1500-C and the SPT-100 at its nominal condition. The SPT-100 at 393 V comes from the
+  separate life-test paper and has no condition-matched xenon run; where it is set against
+  xenon it is against the 302 V nominal control, which differs in voltage and flow as well as
+  propellant. Corrected in findings.md, survey.md, CHANGELOG and the plots.jl docstring.
+- "All three xenon controls pass" on the fast Mars mission corrected to both of them.
+- VASIMR is second on crewed Mars nominal, not third. The ranking table was right and the
+  prose was wrong.
+- The NPT30-I2 clears both probe missions and fails the two Mars missions on the trip-time
+  cap, 466 days against 365 and 768 against 210. It was described as failing both reference
+  missions on thrust, and the model has no thrust constraint.
+- The 205-hour krypton test is about forty times short of the roughly 9000 hours validated on
+  xenon, not two orders of magnitude. Two orders would need the 50 kh design life, which is
+  not the anchor these documents use.
+- The one-third krypton storage density (S12, 14 MPa and 50 C) and the 2.2 times volume
+  computed from the propellants table (650 against 1600 kg/m3 at 293 K) are at different
+  conditions. Both now say so, so the tankage argument reads consistently.
+- plots.jl: hoisted the duplicated horizontal bar panel into hbar_panel, shared by make_plots
+  and make_krypton_plot, parameterised by colour column, colour map, topn and an optional
+  alpha column. Figures are byte-for-byte equivalent. Fixed the stale "26 bars" docstring.
