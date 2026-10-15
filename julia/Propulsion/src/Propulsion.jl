@@ -38,6 +38,10 @@ export g0,
     alpha_for_source,
     THRUSTER_SPECIFIC_MASS_KG_PER_KW,
     MAX_MASS_RATIO,
+    TANK_SPECIFIC_STRENGTH_J_PER_KG,
+    TANK_STRUCTURAL_FLOOR_KG_PER_M3,
+    tank_mass_fraction,
+    inert_mass_with_tank,
     database_path,
     connect_db,
     close_db,
@@ -127,6 +131,79 @@ transfer_time_seconds(mp::Real, ve::Real, eta::Real, power_W::Real) =
     mp * ve^2 / (2 * eta * power_W)
 
 seconds_to_days(seconds::Real) = seconds / SECONDS_PER_DAY
+
+
+# ------------------------------------------------------------------- tankage
+
+"""
+Effective specific strength of the tank wall, J/kg (equivalently m^2/s^2).
+
+A thin-walled sphere holding pressure `P` over volume `V` needs a wall of mass
+`1.5 * P * V / (sigma/rho)`, where `sigma/rho` is the material's specific strength. The value
+used here is well below raw carbon fibre, because it has to absorb the liner, bosses, mounts,
+weld lands and the safety factor that the ideal relation ignores.
+
+It is calibrated so that xenon at 150 bar and 1600 kg/m3 lands near 5 percent of propellant
+mass, which is where flown xenon tankage sits. Everything else follows from that one anchor,
+so the xenon-to-krypton comparison is driven by pressure and density rather than by two
+independently chosen numbers.
+"""
+const TANK_SPECIFIC_STRENGTH_J_PER_KG = 2.8125e5
+
+"""
+Structural floor on tank mass, kg per m3 of propellant volume.
+
+The pressure term goes to zero for a propellant stored unpressurised, but a tank still has
+walls, and a cryogenic tank still has insulation. This term keeps a solid or liquid store from
+coming out weightless and carries most of the hydrogen tank mass.
+"""
+const TANK_STRUCTURAL_FLOOR_KG_PER_M3 = 8.0
+
+"""
+    tank_mass_fraction(storage_density_kg_m3, storage_pressure_bar) -> Float64
+
+Tank dry mass as a fraction of the propellant mass it holds.
+
+    f = 1.5 * P / (rho * psi) + kappa / rho
+
+The first term is the thin-walled pressure vessel, the second the structural and insulation
+floor. Both scale inversely with storage density, which is the whole of krypton's problem: it
+stores at about 40 percent of xenon's density at 293 K and at a higher pressure, so it pays
+twice over.
+
+This is a first-order model. It does not carry boil-off hardware, feed systems, or the
+square-cube advantage a very large tank enjoys over a small one.
+"""
+function tank_mass_fraction(storage_density_kg_m3::Real, storage_pressure_bar::Real)
+    rho = float(storage_density_kg_m3)
+    rho > 0 || throw(ArgumentError("storage density must be positive, got $rho"))
+    p_pa = float(storage_pressure_bar) * 1.0e5
+    pressure_term = 1.5 * p_pa / (rho * TANK_SPECIFIC_STRENGTH_J_PER_KG)
+    floor_term = TANK_STRUCTURAL_FLOOR_KG_PER_M3 / rho
+    pressure_term + floor_term
+end
+
+"""
+    inert_mass_with_tank(base_inert_kg, mass_ratio, tank_fraction) -> Float64 or nothing
+
+Solve for the inert mass once the tank is charged against it.
+
+The tank is sized by the propellant it holds, and the propellant is sized by the inert mass it
+has to push, so the two are mutually defined:
+
+    m_f = base + f * m_p,   m_p = m_f * (MR - 1)
+    =>  m_f = base / (1 - f * (MR - 1))
+
+Returns `nothing` when `f * (MR - 1) >= 1`. That is not a numerical guard but a real physical
+limit: past it the tank needed to hold the propellant is heavier than the propellant buys back,
+and no finite vehicle closes. The corresponding Lean statement is
+`Propulsion.inertMassWithTank_pos`.
+"""
+function inert_mass_with_tank(base_inert_kg::Real, mass_ratio::Real, tank_fraction::Real)
+    denom = 1 - tank_fraction * (mass_ratio - 1)
+    denom > 0 || return nothing
+    base_inert_kg / denom
+end
 
 # ------------------------------------------------------------ delta-v budget
 
@@ -231,12 +308,13 @@ Electric rows get the full power-limited treatment. Nuclear thermal rows get the
 equation only: reactor thermal power is not electrical input power, so trip time is left
 `missing` rather than computed from a model that does not apply to them.
 """
-function compare_one(mission, thruster)
+function compare_one(mission, thruster; tank_fraction::Real = 0.0)
     ismiss(thruster.isp_s) && return nothing
 
     ve = exhaust_velocity(thruster.isp_s)
     mr = mass_ratio(mission.delta_v_m_s, ve)
     zeta = propellant_mass_fraction(mission.delta_v_m_s, ve)
+    f_tank = float(tank_fraction)
 
     electric =
         thruster.power_basis == "electrical_input" &&
@@ -256,9 +334,40 @@ function compare_one(mission, thruster)
             THRUSTER_SPECIFIC_MASS_KG_PER_KW * p_thruster / 1000 : thruster.mass_kg
         alpha = alpha_for_source(mission.power_source)
         power_plant_mass = alpha * p_avail / 1000
-        inert_mass = mission.payload_mass_kg + power_plant_mass + n * unit_mass
+        base_inert = mission.payload_mass_kg + power_plant_mass + n * unit_mass
+
+        inert_mass = inert_mass_with_tank(base_inert, mr, f_tank)
+        if inert_mass === nothing
+            # Tankage diverges: the tank needed to hold the propellant outweighs what the
+            # propellant buys back, so no finite vehicle closes.
+            return (
+                mission_id = mission.mission_id,
+                thruster_id = thruster.thruster_id,
+                n_thrusters = n,
+                exhaust_velocity_m_s = ve,
+                mass_ratio = mr,
+                propellant_mass_fraction = zeta,
+                propellant_mass_kg = missing,
+                initial_mass_kg = missing,
+                power_plant_mass_kg = power_plant_mass,
+                tank_mass_kg = missing,
+                tank_mass_fraction = f_tank,
+                thrust_total_N = n * thruster.thrust_mN / 1000,
+                power_total_W = p_total,
+                trip_time_days = missing,
+                meets_time_constraint = missing,
+                feasible = false,
+                alpha_kg_per_kW = alpha,
+                notes = @sprintf(
+                    "tankage diverges: tank fraction %.3f times (MR-1) %.3f reaches 1, no closed vehicle",
+                    f_tank, mr - 1
+                ),
+            )
+        end
+
+        mp = inert_mass * (mr - 1)
+        tank_mass = f_tank * mp
         m0 = inert_mass * mr
-        mp = m0 - inert_mass
         trip_days = seconds_to_days(transfer_time_seconds(mp, ve, eta, p_total))
         meets = ismiss(mission.max_trip_time_days) ? missing :
                 trip_days <= mission.max_trip_time_days
@@ -278,6 +387,8 @@ function compare_one(mission, thruster)
             propellant_mass_kg = mp,
             initial_mass_kg = m0,
             power_plant_mass_kg = power_plant_mass,
+            tank_mass_kg = tank_mass,
+            tank_mass_fraction = f_tank,
             thrust_total_N = n * thruster.thrust_mN / 1000,
             power_total_W = p_total,
             trip_time_days = trip_days,
@@ -285,20 +396,46 @@ function compare_one(mission, thruster)
             feasible = sane && (meets === missing ? true : meets),
             alpha_kg_per_kW = alpha,
             notes = @sprintf(
-                "power-limited electric; %s; power plant %.0f kg at %.1f kg/kW",
-                mass_note, power_plant_mass, alpha
+                "power-limited electric; %s; power plant %.0f kg at %.1f kg/kW; tank %.0f kg at f=%.3f",
+                mass_note, power_plant_mass, alpha, tank_mass, f_tank
             ),
         )
     else
-        inert_mass = mission.payload_mass_kg
-        m0 = inert_mass * mr
-        mp = m0 - inert_mass
-        sane = isfinite(mr) && mr <= MAX_MASS_RATIO && isfinite(m0)
+        base_inert = mission.payload_mass_kg
+        inert_mass = inert_mass_with_tank(base_inert, mr, f_tank)
         why =
             thruster.power_basis == "reactor_thermal" ?
             "nuclear thermal: power-limited transfer model does not apply, trip time not evaluated" :
             ismiss(mission.power_available_W) ? "mission states no available power" :
             "row lacks one of thrust, Isp, power or efficiency"
+
+        if inert_mass === nothing
+            return (
+                mission_id = mission.mission_id,
+                thruster_id = thruster.thruster_id,
+                n_thrusters = missing,
+                exhaust_velocity_m_s = ve,
+                mass_ratio = mr,
+                propellant_mass_fraction = zeta,
+                propellant_mass_kg = missing,
+                initial_mass_kg = missing,
+                power_plant_mass_kg = missing,
+                tank_mass_kg = missing,
+                tank_mass_fraction = f_tank,
+                thrust_total_N = ismiss(thruster.thrust_mN) ? missing : thruster.thrust_mN / 1000,
+                power_total_W = missing,
+                trip_time_days = missing,
+                meets_time_constraint = missing,
+                feasible = false,
+                alpha_kg_per_kW = missing,
+                notes = @sprintf("%s; tankage diverges at f=%.3f and MR=%.3f", why, f_tank, mr),
+            )
+        end
+
+        mp = inert_mass * (mr - 1)
+        tank_mass = f_tank * mp
+        m0 = inert_mass * mr
+        sane = isfinite(mr) && mr <= MAX_MASS_RATIO && isfinite(m0)
 
         return (
             mission_id = mission.mission_id,
@@ -310,13 +447,17 @@ function compare_one(mission, thruster)
             propellant_mass_kg = mp,
             initial_mass_kg = m0,
             power_plant_mass_kg = missing,
+            tank_mass_kg = tank_mass,
+            tank_mass_fraction = f_tank,
             thrust_total_N = ismiss(thruster.thrust_mN) ? missing : thruster.thrust_mN / 1000,
             power_total_W = missing,
             trip_time_days = missing,
             meets_time_constraint = missing,
             feasible = sane,
             alpha_kg_per_kW = missing,
-            notes = "$why; engine dry mass excluded, initial mass is payload times mass ratio",
+            notes = @sprintf(
+                "%s; engine dry mass excluded; tank %.0f kg at f=%.3f", why, tank_mass, f_tank
+            ),
         )
     end
 end
@@ -327,11 +468,20 @@ end
 Every mission crossed with every thruster that records a specific impulse.
 """
 function run_comparison(con)
+    propellants = load_propellants(con)
+    # Tank fraction per propellant, from its storage density and pressure.
+    tank_fractions = Dict(
+        p.propellant => (ismiss(p.storage_density_kg_m3) ? 0.0 :
+                         tank_mass_fraction(p.storage_density_kg_m3,
+                                            ismiss(p.storage_pressure_bar) ? 0.0 :
+                                            p.storage_pressure_bar))
+        for p in eachrow(propellants)
+    )
     missions = load_missions(con)
     thrusters = load_thrusters(con)
     rows = NamedTuple[]
     for m in eachrow(missions), t in eachrow(thrusters)
-        r = compare_one(m, t)
+        r = compare_one(m, t; tank_fraction = get(tank_fractions, t.propellant, 0.0))
         r === nothing || push!(rows, r)
     end
     DataFrame(rows)
@@ -358,12 +508,14 @@ function write_results!(con, results::DataFrame; producer::AbstractString = "jul
             INSERT INTO results (
                 run_id, run_ts, producer, mission_id, thruster_id, n_thrusters,
                 exhaust_velocity_m_s, mass_ratio, propellant_mass_fraction, propellant_mass_kg,
-                initial_mass_kg, power_plant_mass_kg, thrust_total_N, power_total_W,
+                initial_mass_kg, power_plant_mass_kg, tank_mass_kg, tank_mass_fraction,
+                thrust_total_N, power_total_W,
                 trip_time_days, meets_time_constraint, feasible, alpha_kg_per_kW, notes)
             SELECT
                 run_id, run_ts, producer, mission_id, thruster_id, n_thrusters,
                 exhaust_velocity_m_s, mass_ratio, propellant_mass_fraction, propellant_mass_kg,
-                initial_mass_kg, power_plant_mass_kg, thrust_total_N, power_total_W,
+                initial_mass_kg, power_plant_mass_kg, tank_mass_kg, tank_mass_fraction,
+                thrust_total_N, power_total_W,
                 trip_time_days, meets_time_constraint, feasible, alpha_kg_per_kW, notes
             FROM staged_results
         """)

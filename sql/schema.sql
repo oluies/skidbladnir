@@ -118,6 +118,8 @@ CREATE TABLE results (
     propellant_mass_kg      DOUBLE,
     initial_mass_kg         DOUBLE,
     power_plant_mass_kg     DOUBLE,
+    tank_mass_kg            DOUBLE,
+    tank_mass_fraction      DOUBLE,
     thrust_total_N          DOUBLE,
     power_total_W           DOUBLE,
     trip_time_days          DOUBLE,

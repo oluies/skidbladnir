@@ -37,7 +37,8 @@ object Main:
         val missions = Dataset.missions(conn)
         val thrusters = Dataset.thrusters(conn)
         val runId = s"scala-${Instant.now().toString}"
-        val results = Comparison.runAll(missions, thrusters, runId, producer)
+        val propellants = Dataset.propellants(conn)
+        val results = Comparison.runAll(missions, thrusters, propellants, runId, producer)
         val written = ResultsWriter.write(conn, producer, results)
         println(
           s"comparison: ${missions.size} missions x ${thrusters.size} thrusters " +

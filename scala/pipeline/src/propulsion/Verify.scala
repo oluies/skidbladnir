@@ -114,6 +114,75 @@ object Verify:
       close(t1, 2.0 * t2)
     }
 
+
+    println("tank mass model")
+
+    // Calibration anchor: xenon at 150 bar, 1600 kg/m3 should land near 5 percent.
+    check("xenon tank fraction is near the flown 5 percent") {
+      val f = Physics.tankMassFraction(1600.0, 150.0)
+      f > 0.04 && f < 0.07
+    }
+
+    check("krypton pays more than twice xenon's tank fraction") {
+      val fXe = Physics.tankMassFraction(1600.0, 150.0)
+      val fKr = Physics.tankMassFraction(650.0, 200.0)
+      fKr > fXe && fKr / fXe > 2.5
+    }
+
+    // Lean: tankMassFraction_lt_of_density_lt.
+    check("tank fraction strictly decreases with storage density") {
+      val ds = Seq(400.0, 650.0, 1000.0, 1600.0, 4933.0)
+      ds.map(Physics.tankMassFraction(_, 150.0)).sliding(2).forall {
+        case Seq(a, b) => b < a
+        case _         => true
+      }
+    }
+
+    // Lean: tankMassFraction_lt_of_pressure_lt.
+    check("tank fraction strictly increases with storage pressure") {
+      val ps = Seq(0.0, 50.0, 150.0, 300.0)
+      ps.map(Physics.tankMassFraction(1000.0, _)).sliding(2).forall {
+        case Seq(a, b) => b > a
+        case _         => true
+      }
+    }
+
+    check("an unpressurised dense solid still gets a structural floor") {
+      Physics.tankMassFraction(4933.0, 0.0) > 0.0
+    }
+
+    // Lean: inertMassWithTank_zero.
+    check("no tank gives back the base inert mass") {
+      Physics.inertMassWithTank(1000.0, 1.5, 0.0).contains(1000.0)
+    }
+
+    // Lean: inertMassWithTank_fixed_point.
+    check("inert mass solves m_f = base + f * m_f * (MR - 1)") {
+      val base = 1000.0
+      val mr = 1.5
+      Seq(0.0, 0.05, 0.176, 0.5).forall { f =>
+        Physics.inertMassWithTank(base, mr, f).exists { mf =>
+          close(mf, base + f * (mf * (mr - 1.0)))
+        }
+      }
+    }
+
+    // Lean: inertMassWithTank_lt_of_tankFraction_lt and le_inertMassWithTank.
+    check("inert mass rises with tank fraction and never falls below the base") {
+      val base = 1000.0
+      val mr = 1.5
+      val ms = Seq(0.0, 0.1, 0.2, 0.4).map(Physics.inertMassWithTank(base, mr, _))
+      ms.forall(_.isDefined) &&
+      ms.flatten.sliding(2).forall { case Seq(a, b) => b > a; case _ => true } &&
+      ms.flatten.forall(_ >= base)
+    }
+
+    // Lean: the tankCloses hypothesis.
+    check("no finite vehicle closes once f times (MR-1) reaches 1") {
+      Physics.inertMassWithTank(1000.0, 3.0, 0.5).isEmpty &&
+      Physics.inertMassWithTank(1000.0, 3.0, 0.6).isEmpty &&
+      Physics.inertMassWithTank(1000.0, 3.0, 0.49).isDefined
+    }
     println("dataset and comparison")
 
     Db.withConnection() { conn =>
@@ -149,7 +218,7 @@ object Verify:
         Validation.run(conn).count(_.severity == Severity.Error) == 0
       }
 
-      val results = Comparison.runAll(missions, thrusters, "verify", "scala")
+      val results = Comparison.runAll(missions, thrusters, propellants, "verify", "scala")
 
       check("every thruster with an Isp produces a result per mission") {
         val withIsp = thrusters.count(_.hasIsp)
@@ -182,8 +251,9 @@ object Verify:
 
       check("a higher-Isp thruster needs less propellant on the same mission") {
         val m = missions.find(_.missionId == "probe500_nominal").get
-        val lo = Comparison.compare(m, thrusters.find(_.thrusterId == "spt100").get, "v", "scala").get
-        val hi = Comparison.compare(m, thrusters.find(_.thrusterId == "next_pm1").get, "v", "scala").get
+        val fr = Comparison.tankFractions(propellants)
+        val lo = Comparison.compare(m, thrusters.find(_.thrusterId == "spt100").get, "v", "scala", fr("xenon")).get
+        val hi = Comparison.compare(m, thrusters.find(_.thrusterId == "next_pm1").get, "v", "scala", fr("xenon")).get
         hi.propellantMassFraction.get < lo.propellantMassFraction.get
       }
     }

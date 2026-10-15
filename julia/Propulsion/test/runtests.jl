@@ -76,6 +76,61 @@ using DataFrames
         @test seconds_to_days(86400.0) ≈ 1.0
     end
 
+
+    @testset "tank mass model" begin
+        # Calibration anchor: xenon at 150 bar and 1600 kg/m3 should land near 5 percent,
+        # which is where flown xenon tankage sits.
+        f_xe = tank_mass_fraction(1600.0, 150.0)
+        @test 0.04 < f_xe < 0.07
+
+        # Krypton pays twice: lower density and higher pressure.
+        f_kr = tank_mass_fraction(650.0, 200.0)
+        @test f_kr > f_xe
+        @test f_kr / f_xe > 2.5
+
+        # Argon is worse again.
+        @test tank_mass_fraction(500.0, 300.0) > f_kr
+
+        # Strictly decreasing in storage density, strictly increasing in pressure.
+        # Lean: tankMassFraction_lt_of_density_lt, tankMassFraction_lt_of_pressure_lt.
+        densities = [400.0, 650.0, 1000.0, 1600.0, 4933.0]
+        @test issorted([tank_mass_fraction(r, 150.0) for r in densities], rev = true)
+        pressures = [0.0, 50.0, 150.0, 300.0]
+        @test issorted([tank_mass_fraction(1000.0, p) for p in pressures])
+
+        @test_throws ArgumentError tank_mass_fraction(0.0, 150.0)
+
+        # An unpressurised dense solid still gets a structural floor, never zero.
+        @test tank_mass_fraction(4933.0, 0.0) > 0
+    end
+
+    @testset "inert mass with tankage" begin
+        base, mr = 1000.0, 1.5
+
+        # No tank gives back the base. Lean: inertMassWithTank_zero.
+        @test inert_mass_with_tank(base, mr, 0.0) == base
+
+        # The closed form solves the fixed point m_f = base + f * m_f * (MR - 1).
+        # Lean: inertMassWithTank_fixed_point.
+        for f in (0.0, 0.05, 0.176, 0.5)
+            mf = inert_mass_with_tank(base, mr, f)
+            @test mf !== nothing
+            @test mf ≈ base + f * (mf * (mr - 1))
+        end
+
+        # Strictly increasing in tank fraction, and never below the base.
+        # Lean: inertMassWithTank_lt_of_tankFraction_lt, le_inertMassWithTank.
+        ms = [inert_mass_with_tank(base, mr, f) for f in (0.0, 0.1, 0.2, 0.4)]
+        @test all(!isnothing, ms)
+        @test issorted(Float64.(ms))
+        @test all(m -> m >= base, Float64.(ms))
+
+        # Past f * (MR - 1) = 1 no finite vehicle closes. Lean: the tankCloses hypothesis.
+        @test inert_mass_with_tank(base, 3.0, 0.5) === nothing   # 0.5 * 2.0 == 1
+        @test inert_mass_with_tank(base, 3.0, 0.6) === nothing
+        @test inert_mass_with_tank(base, 3.0, 0.49) !== nothing
+    end
+
     con = connect_db()
     try
         thrusters = load_thrusters(con)
@@ -107,10 +162,22 @@ using DataFrames
 
             for r in eachrow(results)
                 m = first(missions[missions.mission_id .== r.mission_id, :])
-                @test r.initial_mass_kg > m.payload_mass_kg
                 @test 0 < r.propellant_mass_fraction < 1
-                @test r.propellant_mass_kg < r.initial_mass_kg
                 @test r.mass_ratio >= 1
+                if ismissing(r.initial_mass_kg)
+                    # The only way a row has no initial mass is tankage divergence, and such
+                    # a row must be reported infeasible rather than silently dropped.
+                    @test !r.feasible
+                    @test occursin("tankage diverges", r.notes)
+                    @test ismissing(r.propellant_mass_kg)
+                else
+                    @test r.initial_mass_kg > m.payload_mass_kg
+                    @test r.propellant_mass_kg < r.initial_mass_kg
+                    # Initial mass is inert plus propellant, and the tank is inside the inert.
+                    @test r.tank_mass_kg >= 0
+                    @test isapprox(r.tank_mass_kg,
+                                   r.tank_mass_fraction * r.propellant_mass_kg, rtol = 1e-9)
+                end
             end
 
             # Nuclear thermal rows must not carry a power-limited trip time.
@@ -132,7 +199,7 @@ using DataFrames
             # that makes the duplication worth having.
             scala = query_db(con, """
                 SELECT mission_id, thruster_id, initial_mass_kg, propellant_mass_kg,
-                       trip_time_days, n_thrusters
+                       tank_mass_kg, trip_time_days, n_thrusters, feasible
                 FROM results WHERE producer = 'scala'
             """)
             if nrow(scala) == 0
@@ -142,16 +209,41 @@ using DataFrames
                 joined = innerjoin(results, scala,
                                    on = [:mission_id, :thruster_id], makeunique = true)
                 @test nrow(joined) == nrow(scala)
+                approx_or_both_missing(a, b) =
+                    (ismissing(a) && ismissing(b)) ||
+                    (!ismissing(a) && !ismissing(b) && isapprox(a, b, rtol = 1e-9))
                 for r in eachrow(joined)
-                    @test isapprox(r.initial_mass_kg, r.initial_mass_kg_1, rtol = 1e-9)
-                    @test isapprox(r.propellant_mass_kg, r.propellant_mass_kg_1, rtol = 1e-9)
-                    if !ismissing(r.trip_time_days) && !ismissing(r.trip_time_days_1)
-                        @test isapprox(r.trip_time_days, r.trip_time_days_1, rtol = 1e-9)
-                    else
-                        @test ismissing(r.trip_time_days) && ismissing(r.trip_time_days_1)
-                    end
+                    @test approx_or_both_missing(r.initial_mass_kg, r.initial_mass_kg_1)
+                    @test approx_or_both_missing(r.propellant_mass_kg, r.propellant_mass_kg_1)
+                    @test approx_or_both_missing(r.tank_mass_kg, r.tank_mass_kg_1)
+                    @test approx_or_both_missing(r.trip_time_days, r.trip_time_days_1)
                     @test isequal(r.n_thrusters, r.n_thrusters_1)
+                    @test r.feasible == r.feasible_1
                 end
+            end
+        end
+
+
+        @testset "tankage reverses the krypton matched pairs" begin
+            # Without a tank model krypton wins on initial mass in both matched pairs.
+            # Charging the tank against the vehicle reverses both, which is the result the
+            # tank model was added to settle.
+            got = query_db(con, """
+                SELECT t.thruster_id, t.propellant, r.initial_mass_kg, r.tank_mass_kg
+                FROM results r JOIN thrusters t USING (thruster_id)
+                WHERE r.producer = 'julia' AND r.mission_id = 'probe500_nominal'
+                  AND t.thruster_id IN ('bht1500c_kr','bht1500c_xe',
+                                        'spt100_kr_nom','spt100_xe_nakles')
+            """)
+            if nrow(got) == 4
+                m = Dict(r.thruster_id => r for r in eachrow(got))
+                @test m["bht1500c_xe"].initial_mass_kg < m["bht1500c_kr"].initial_mass_kg
+                @test m["spt100_xe_nakles"].initial_mass_kg < m["spt100_kr_nom"].initial_mass_kg
+                # The krypton tank is the reason, not the propellant mass.
+                @test m["bht1500c_kr"].tank_mass_kg > 2 * m["bht1500c_xe"].tank_mass_kg
+            else
+                @info "results not populated for this mission; run the pipeline first"
+                @test true
             end
         end
 

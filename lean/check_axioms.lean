@@ -29,3 +29,12 @@ import Propulsion.Basic
 #print axioms Propulsion.transferTime_eq_propellantMass_div_massFlow
 #print axioms Propulsion.transferTime_double_power
 #print axioms Propulsion.transferTime_lt_of_power_lt
+#print axioms Propulsion.tankMassFraction_eq
+#print axioms Propulsion.tankMassFraction_pos
+#print axioms Propulsion.tankMassFraction_lt_of_density_lt
+#print axioms Propulsion.tankMassFraction_lt_of_pressure_lt
+#print axioms Propulsion.inertMassWithTank_fixed_point
+#print axioms Propulsion.inertMassWithTank_pos
+#print axioms Propulsion.inertMassWithTank_zero
+#print axioms Propulsion.inertMassWithTank_lt_of_tankFraction_lt
+#print axioms Propulsion.le_inertMassWithTank

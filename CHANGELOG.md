@@ -207,3 +207,47 @@ four figures render, Lean builds and all 21 theorems report only the three stand
   genuine pair. It now leads with both like-for-like pairs, BHT-1500-C at 225.8 against 186.8
   days and SPT-100 nominal at 251.3 against 202.4, and keeps the 393 V row as the explicitly
   weaker data point.
+
+## 2026-10-15 (tank model)
+
+### Propellant tankage charged against the vehicle
+- The comparison now sizes a propellant tank and carries it in the inert mass. Previously it
+  did not, and docs/findings.md named that as the one gap able to overturn a stated result.
+  It did overturn it.
+- Tank fraction is f = 1.5 P / (rho psi) + kappa / rho kg of tank per kg of propellant: a
+  thin-walled pressure vessel plus a structural and insulation floor. psi, the effective wall
+  specific strength, is calibrated once so xenon at 150 bar and 1600 kg/m3 lands near 5
+  percent, where flown xenon tankage sits. Every other propellant then follows from its own
+  density and pressure rather than a second free choice.
+- Resulting fractions: xenon 5.5 percent, hydrogen 12.0, krypton 17.6, argon 33.6, lithium
+  1.5, iodine 0.2.
+- Because the tank is sized by the propellant and the propellant by the inert mass, the inert
+  mass is a fixed point, m_f = base / (1 - f (MR - 1)), with a solution only while
+  f (MR - 1) < 1. Past that the tank outweighs what the propellant buys back and no finite
+  vehicle closes; such rows are marked infeasible rather than returned as a number.
+- Added tank_mass_kg and tank_mass_fraction to the results table.
+
+### What it changed
+- Krypton now loses every matched pair on both missions, having won all four before. Its tank
+  is three times xenon's for a similar propellant load, because it stores at 650 against 1600
+  kg/m3 and at 200 against 150 bar, so it pays on both terms.
+- VASIMR fell from second on crewed Mars nominal to outside the top six, on argon's 33.6
+  percent tank fraction. The lithium MPD thrusters gained places for the opposite reason.
+- Feasible combinations fell from 103 to 98 of 124.
+- The probe ranking did not move. HiPEP, NEXT, T6 and XIPS-25 hold the top four at both
+  delta-v levels and through every sensitivity case.
+
+### Implementation
+- Julia and Scala implement the tank model independently, as with the rest. All 124 rows
+  agree to 1e-9 on initial mass, propellant mass, tank mass and trip time, with no
+  feasibility mismatches.
+- Lean gains 9 theorems: the closed form solves the fixed point, it is positive exactly when
+  the vehicle closes, it is strictly increasing in tank fraction and never below the base, and
+  the tank fraction is strictly decreasing in storage density and increasing in pressure. 30
+  theorems total, all depending only on the three standard axioms, no sorry.
+- Tests: 1555 Julia, 35 Scala. New Julia tests pin the divergence condition and assert the
+  krypton reversal directly, so it cannot regress silently.
+- scripts/sensitivity.jl now varies tank wall strength as a third axis. Doubling it brings
+  VASIMR back into the Mars top five; halving it does not. Argon's position is a statement
+  about the tank assumption rather than about the thruster.
+- docs/figures/krypton_vs_xenon.png gains a tank mass column, which is the mechanism.

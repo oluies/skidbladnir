@@ -72,4 +72,47 @@ object Physics {
   val secondsPerDay: Double = 86400.0
 
   def secondsToDays(seconds: Double): Double = seconds / secondsPerDay
+
+  // ------------------------------------------------------------------ tankage
+
+  /** Effective specific strength of the tank wall, J/kg.
+    *
+    * A thin-walled sphere holding pressure P over volume V needs a wall of mass
+    * 1.5 * P * V / (sigma/rho). The value here is well below raw carbon fibre because it has
+    * to absorb the liner, bosses, mounts and safety factor the ideal relation ignores. It is
+    * calibrated so xenon at 150 bar and 1600 kg/m3 lands near 5% of propellant mass, which is
+    * where flown xenon tankage sits; every other propellant follows from that one anchor.
+    */
+  val tankSpecificStrengthJPerKg: Double = 2.8125e5
+
+  /** Structural floor on tank mass, kg per m3 of propellant volume. Keeps an unpressurised
+    * store from coming out weightless and carries most of a cryogenic tank's mass.
+    */
+  val tankStructuralFloorKgPerM3: Double = 8.0
+
+  /** Tank dry mass as a fraction of the propellant it holds:
+    * f = 1.5 * P / (rho * psi) + kappa / rho.
+    *
+    * Both terms scale inversely with storage density, which is the whole of krypton's
+    * problem: it stores at about 40% of xenon's density and at a higher pressure, so it pays
+    * twice. Lean: `Propulsion.tankMassFraction`.
+    */
+  def tankMassFraction(storageDensityKgM3: Double, storagePressureBar: Double): Double =
+    require(storageDensityKgM3 > 0, s"storage density must be positive, got $storageDensityKgM3")
+    val pPa = storagePressureBar * 1.0e5
+    1.5 * pPa / (storageDensityKgM3 * tankSpecificStrengthJPerKg) +
+      tankStructuralFloorKgPerM3 / storageDensityKgM3
+
+  /** Solve for the inert mass once the tank is charged against it.
+    *
+    * The tank is sized by the propellant it holds and the propellant by the inert mass it
+    * pushes, so m_f = base + f * m_f * (MR - 1), giving m_f = base / (1 - f * (MR - 1)).
+    *
+    * None when f * (MR - 1) >= 1. That is a physical limit rather than a numerical guard:
+    * past it the tank outweighs what the propellant buys back and no finite vehicle closes.
+    * Lean: `Propulsion.inertMassWithTank_pos`.
+    */
+  def inertMassWithTank(baseInertKg: Double, massRatio: Double, tankFraction: Double): Option[Double] =
+    val denom = 1.0 - tankFraction * (massRatio - 1.0)
+    if denom > 0.0 then Some(baseInertKg / denom) else None
 }

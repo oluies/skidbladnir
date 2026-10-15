@@ -14,9 +14,10 @@ object ResultsWriter:
     """INSERT INTO results (
          run_id, run_ts, producer, mission_id, thruster_id, n_thrusters,
          exhaust_velocity_m_s, mass_ratio, propellant_mass_fraction, propellant_mass_kg,
-         initial_mass_kg, power_plant_mass_kg, thrust_total_N, power_total_W,
+         initial_mass_kg, power_plant_mass_kg, tank_mass_kg, tank_mass_fraction,
+         thrust_total_N, power_total_W,
          trip_time_days, meets_time_constraint, feasible, alpha_kg_per_kW, notes
-       ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
+       ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
 
   def write(conn: Connection, producer: String, results: Vector[ComparisonResult]): Int =
     val del = conn.prepareStatement("DELETE FROM results WHERE producer = ?")
@@ -41,13 +42,15 @@ object ResultsWriter:
         setOptDouble(ps, 10, r.propellantMassKg)
         setOptDouble(ps, 11, r.initialMassKg)
         setOptDouble(ps, 12, r.powerPlantMassKg)
-        setOptDouble(ps, 13, r.thrustTotalN)
-        setOptDouble(ps, 14, r.powerTotalW)
-        setOptDouble(ps, 15, r.tripTimeDays)
-        setOptBoolean(ps, 16, r.meetsTimeConstraint)
-        ps.setBoolean(17, r.feasible)
-        setOptDouble(ps, 18, r.alphaKgPerKW)
-        ps.setString(19, r.notes)
+        setOptDouble(ps, 13, r.tankMassKg)
+        setOptDouble(ps, 14, r.tankMassFraction)
+        setOptDouble(ps, 15, r.thrustTotalN)
+        setOptDouble(ps, 16, r.powerTotalW)
+        setOptDouble(ps, 17, r.tripTimeDays)
+        setOptBoolean(ps, 18, r.meetsTimeConstraint)
+        ps.setBoolean(19, r.feasible)
+        setOptDouble(ps, 20, r.alphaKgPerKW)
+        ps.setString(21, r.notes)
         ps.addBatch()
       ps.executeBatch().sum
     finally ps.close()

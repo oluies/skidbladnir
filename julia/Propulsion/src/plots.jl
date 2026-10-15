@@ -186,7 +186,7 @@ function make_krypton_plot(con, outdir::AbstractString; producer::AbstractString
     df = query_db(con, """
         SELECT m.mission_id AS mid, m.name AS mission_name,
                t.name AS thruster_name, t.propellant,
-               r.initial_mass_kg, r.trip_time_days, r.feasible
+               r.initial_mass_kg, r.tank_mass_kg, r.trip_time_days, r.feasible
         FROM results r
         JOIN missions m ON m.mission_id = r.mission_id
         JOIN thrusters t ON t.thruster_id = r.thruster_id
@@ -202,6 +202,7 @@ function make_krypton_plot(con, outdir::AbstractString; producer::AbstractString
         nrow(sub) == 0 && continue
         name = first(sub.mission_name)
         for (col, label) in ((:initial_mass_kg, "initial mass, kg"),
+                             (:tank_mass_kg, "tank dry mass, kg"),
                              (:trip_time_days, "thrusting time, days"))
             push!(panels, hbar_panel(sub, col,
                                      "$name\n$label (pale = fails the time cap)", label;
@@ -212,7 +213,7 @@ function make_krypton_plot(con, outdir::AbstractString; producer::AbstractString
         end
     end
 
-    p = plot(panels...; layout = (3, 2), size = (1500, 1250),
+    p = plot(panels...; layout = (3, 3), size = (2000, 1250),
              left_margin = 34Plots.mm, bottom_margin = 7Plots.mm, top_margin = 5Plots.mm)
     path = joinpath(outdir, "krypton_vs_xenon.png")
     savefig(p, path)

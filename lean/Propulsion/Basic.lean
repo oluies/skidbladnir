@@ -251,6 +251,116 @@ theorem transferTime_lt_of_power_lt {mp ve η P₁ P₂ : ℝ} (hmp : 0 < mp) (h
   have hnum : 0 < mp * ve ^ 2 := by positivity
   exact div_lt_div_of_pos_left hnum (by positivity) (by nlinarith)
 
+
+/-! ## Tankage
+
+The comparison charges a propellant tank against the vehicle. The tank is sized by the
+propellant it holds and the propellant is sized by the inert mass it has to push, so the two
+are mutually defined and the inert mass is the solution of a fixed-point equation rather than
+a sum. `inertMassWithTank_fixed_point` is the statement that the closed form really does solve
+it, and `tankClosure` is the condition under which a solution exists at all. -/
+
+/-- Tank dry mass as a fraction of the propellant it holds,
+`f = 1.5 * P / (ρ ψ) + κ / ρ`, for storage pressure `P`, storage density `ρ`, effective wall
+specific strength `ψ` and a structural floor `κ`. -/
+def tankMassFraction (P ρ ψ κ : ℝ) : ℝ := 1.5 * P / (ρ * ψ) + κ / ρ
+
+/-- The two terms collect over the storage density. -/
+theorem tankMassFraction_eq {P ρ ψ κ : ℝ} (hρ : ρ ≠ 0) (hψ : ψ ≠ 0) :
+    tankMassFraction P ρ ψ κ = (1.5 * P / ψ + κ) / ρ := by
+  unfold tankMassFraction
+  field_simp
+
+theorem tankMassFraction_pos {P ρ ψ κ : ℝ} (hP : 0 ≤ P) (hρ : 0 < ρ) (hψ : 0 < ψ)
+    (hκ : 0 < κ) : 0 < tankMassFraction P ρ ψ κ := by
+  unfold tankMassFraction
+  have h1 : 0 ≤ 1.5 * P / (ρ * ψ) := by positivity
+  have h2 : 0 < κ / ρ := by positivity
+  linarith
+
+/-- **Denser storage means a lighter tank.** Both terms carry `ρ` in the denominator, so the
+tank fraction is strictly decreasing in storage density. This is the whole of krypton's
+tankage problem: it stores at a lower density than xenon, and at a higher pressure, so it
+pays on both terms. -/
+theorem tankMassFraction_lt_of_density_lt {P ψ κ ρ₁ ρ₂ : ℝ} (hP : 0 ≤ P) (hψ : 0 < ψ)
+    (hκ : 0 < κ) (hρ₁ : 0 < ρ₁) (h : ρ₁ < ρ₂) :
+    tankMassFraction P ρ₂ ψ κ < tankMassFraction P ρ₁ ψ κ := by
+  have hρ₂ : 0 < ρ₂ := lt_trans hρ₁ h
+  rw [tankMassFraction_eq (ne_of_gt hρ₁) (ne_of_gt hψ),
+      tankMassFraction_eq (ne_of_gt hρ₂) (ne_of_gt hψ)]
+  have hnum : 0 < 1.5 * P / ψ + κ := by positivity
+  exact div_lt_div_of_pos_left hnum hρ₁ h
+
+/-- Higher storage pressure means a heavier tank, at fixed density. -/
+theorem tankMassFraction_lt_of_pressure_lt {ρ ψ κ P₁ P₂ : ℝ} (hρ : 0 < ρ) (hψ : 0 < ψ)
+    (h : P₁ < P₂) :
+    tankMassFraction P₁ ρ ψ κ < tankMassFraction P₂ ρ ψ κ := by
+  unfold tankMassFraction
+  have : 1.5 * P₁ / (ρ * ψ) < 1.5 * P₂ / (ρ * ψ) := by
+    apply div_lt_div_of_pos_right (by linarith) (by positivity)
+  linarith
+
+/-- The condition under which a vehicle carrying its own tank closes at all. -/
+def tankCloses (f mr : ℝ) : Prop := f * (mr - 1) < 1
+
+/-- Inert mass once the tank is charged against it, `m_f = base / (1 - f (MR - 1))`. -/
+def inertMassWithTank (base mr f : ℝ) : ℝ := base / (1 - f * (mr - 1))
+
+/-- **The closed form solves the fixed-point equation.**
+
+The tank is `f` times the propellant, the propellant is `m_f (MR - 1)`, and the inert mass is
+the base plus the tank. This says the quotient really does satisfy that. -/
+theorem inertMassWithTank_fixed_point {base mr f : ℝ} (h : tankCloses f mr) :
+    inertMassWithTank base mr f
+      = base + f * (inertMassWithTank base mr f * (mr - 1)) := by
+  unfold tankCloses at h
+  have hne : 1 - f * (mr - 1) ≠ 0 := by
+    intro hzero
+    rw [sub_eq_zero] at hzero
+    exact absurd hzero.symm (ne_of_lt h)
+  unfold inertMassWithTank
+  field_simp
+  ring
+
+/-- **A closing vehicle has positive inert mass.** The hypothesis `tankCloses` is not a
+numerical guard: past it the tank needed to hold the propellant outweighs what the propellant
+buys back, and no finite vehicle exists. -/
+theorem inertMassWithTank_pos {base mr f : ℝ} (hbase : 0 < base) (h : tankCloses f mr) :
+    0 < inertMassWithTank base mr f := by
+  unfold tankCloses at h
+  unfold inertMassWithTank
+  have hden : 0 < 1 - f * (mr - 1) := by linarith
+  exact div_pos hbase hden
+
+/-- With no tank the inert mass is just the base. -/
+theorem inertMassWithTank_zero (base mr : ℝ) : inertMassWithTank base mr 0 = base := by
+  unfold inertMassWithTank; simp
+
+/-- **A heavier tank means a heavier vehicle.** Strictly monotone in the tank fraction, for a
+mass ratio above one and a vehicle that still closes. -/
+theorem inertMassWithTank_lt_of_tankFraction_lt {base mr f₁ f₂ : ℝ} (hbase : 0 < base)
+    (hmr : 1 < mr) (h₂ : tankCloses f₂ mr) (h : f₁ < f₂) :
+    inertMassWithTank base mr f₁ < inertMassWithTank base mr f₂ := by
+  unfold tankCloses at h₂
+  have hmr1 : 0 < mr - 1 := by linarith
+  have hd₂ : 0 < 1 - f₂ * (mr - 1) := by linarith
+  have hprod : f₁ * (mr - 1) < f₂ * (mr - 1) := by
+    exact mul_lt_mul_of_pos_right h hmr1
+  have hd₁ : 0 < 1 - f₁ * (mr - 1) := by linarith
+  unfold inertMassWithTank
+  exact div_lt_div_of_pos_left hbase hd₂ (by linarith)
+
+/-- Tankage never reduces the vehicle: the no-tank case is the lower bound. -/
+theorem le_inertMassWithTank {base mr f : ℝ} (hbase : 0 < base) (hmr : 1 < mr)
+    (hf : 0 ≤ f) (h : tankCloses f mr) :
+    base ≤ inertMassWithTank base mr f := by
+  unfold tankCloses at h
+  unfold inertMassWithTank
+  have hmr1 : 0 < mr - 1 := by linarith
+  have hden : 0 < 1 - f * (mr - 1) := by linarith
+  rw [le_div_iff₀ hden]
+  nlinarith [mul_nonneg hf (le_of_lt hmr1)]
+
 end
 
 end Propulsion

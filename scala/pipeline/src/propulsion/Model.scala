@@ -70,6 +70,7 @@ final case class Propellant(
     firstIonisationEV: Option[Double],
     storagePhase: String,
     storageDensityKgM3: Option[Double],
+    storagePressureBar: Option[Double],
     sourceId: Option[String]
 )
 
@@ -124,6 +125,8 @@ final case class ComparisonResult(
     propellantMassKg: Option[Double],
     initialMassKg: Option[Double],
     powerPlantMassKg: Option[Double],
+    tankMassKg: Option[Double],
+    tankMassFraction: Option[Double],
     thrustTotalN: Option[Double],
     powerTotalW: Option[Double],
     tripTimeDays: Option[Double],

@@ -357,8 +357,12 @@ it here.
 
 Krypton tankage is not characterised in a way a trade study can use. The one-third storage
 density figure [S12] is quoted at a single pressure and temperature, and the mass of a tank
-sized for the resulting volume is what decides whether krypton's propellant saving survives
-to the vehicle level. No source consulted gives tank mass for a krypton system.
+sized for the resulting volume is what decides whether krypton's propellant saving survives to
+the vehicle level. No source consulted gives a measured tank mass for a krypton system. The
+comparison in this project therefore sizes the tank from a thin-walled pressure vessel
+relation calibrated against flown xenon tankage, and on that model krypton loses the
+comparison it won without one (see docs/findings.md). That is a modelled result, not a
+measured one, and a published krypton tank mass would replace it.
 
 Krypton erosion and life remain open. The 205-hour test [S31] is the longest published krypton
 run on any thruster, about forty times short of the roughly 9000 hours validated on xenon for

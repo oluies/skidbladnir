@@ -27,6 +27,7 @@ object Dataset:
         firstIonisationEV = Db.optDouble(rs, "first_ionisation_eV"),
         storagePhase = Db.str(rs, "storage_phase"),
         storageDensityKgM3 = Db.optDouble(rs, "storage_density_kg_m3"),
+        storagePressureBar = Db.optDouble(rs, "storage_pressure_bar"),
         sourceId = Db.optString(rs, "source_id")
       )
     }
