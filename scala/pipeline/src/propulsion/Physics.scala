@@ -115,4 +115,29 @@ object Physics {
   def inertMassWithTank(baseInertKg: Double, massRatio: Double, tankFraction: Double): Option[Double] =
     val denom = 1.0 - tankFraction * (massRatio - 1.0)
     if denom > 0.0 then Some(baseInertKg / denom) else None
+
+  /** The largest tank fraction a vehicle at this mass ratio can carry and still close,
+    * `1/(MR - 1)`. [[inertMassWithTank]] returns Some exactly when the fraction is below it.
+    * Infinite for massRatio <= 1, where no propellant is needed.
+    * Lean: `Propulsion.tankCloses_iff_lt_max`.
+    */
+  def maxTankFraction(massRatio: Double): Double =
+    if massRatio > 1.0 then 1.0 / (massRatio - 1.0) else Double.PositiveInfinity
+
+  /** The structural floor `kappa` at which a vehicle at this mass ratio stops closing.
+    *
+    * Inverts the tank relation against [[maxTankFraction]]. Negative means the pressure term
+    * alone already exceeds the limit. This is the number that decides the nuclear thermal
+    * case: liquid hydrogen takes 94% of its tank fraction from the floor term, so kappa
+    * rather than the wall strength governs whether the vehicle closes.
+    */
+  def criticalStructuralFloor(
+      storageDensityKgM3: Double,
+      storagePressureBar: Double,
+      massRatio: Double
+  ): Double =
+    require(storageDensityKgM3 > 0, s"storage density must be positive, got $storageDensityKgM3")
+    val pressureTerm = 1.5 * storagePressureBar * 1.0e5 /
+      (storageDensityKgM3 * tankSpecificStrengthJPerKg)
+    storageDensityKgM3 * (maxTankFraction(massRatio) - pressureTerm)
 }

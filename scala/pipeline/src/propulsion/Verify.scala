@@ -183,6 +183,57 @@ object Verify:
       Physics.inertMassWithTank(1000.0, 3.0, 0.6).isEmpty &&
       Physics.inertMassWithTank(1000.0, 3.0, 0.49).isDefined
     }
+
+    // Lean: tankCloses_iff_lt_max.
+    check("a vehicle closes exactly below the tank fraction limit") {
+      Seq(1.5, 2.2, 5.5, 6.46).forall { mr =>
+        val fmax = Physics.maxTankFraction(mr)
+        Physics.inertMassWithTank(1000.0, mr, fmax * 0.99).isDefined &&
+        Physics.inertMassWithTank(1000.0, mr, fmax * 1.01).isEmpty
+      }
+    }
+
+    // Lean: tankCloses_bound_antitone.
+    check("a larger mass ratio tolerates a smaller tank fraction") {
+      Seq(1.5, 2.5, 4.0, 6.5).map(Physics.maxTankFraction).sliding(2).forall {
+        case Seq(a, b) => b < a
+        case _         => true
+      }
+    }
+
+    check("no propellant means tankage is unconstrained") {
+      Physics.maxTankFraction(1.0).isPosInfinity && Physics.maxTankFraction(0.5).isPosInfinity
+    }
+
+    check("critical structural floor inverts the tank relation") {
+      val (rho, pBar) = (70.85, 1.0)
+      Seq(2.21, 5.47, 6.46).forall { mr =>
+        val kcrit = Physics.criticalStructuralFloor(rho, pBar, mr)
+        val fAtCrit =
+          1.5 * pBar * 1.0e5 / (rho * Physics.tankSpecificStrengthJPerKg) + kcrit / rho
+        close(fAtCrit, Physics.maxTankFraction(mr), 1e-12)
+      }
+    }
+
+    // Hydrogen's tank is floor-dominated, xenon's pressure-dominated. This is why the wall
+    // strength sweep moves the electric cases and barely touches nuclear thermal.
+    check("hydrogen tankage is dominated by the structural floor") {
+      val pressure = 1.5 * 1.0e5 / (70.85 * Physics.tankSpecificStrengthJPerKg)
+      val floor = Physics.tankStructuralFloorKgPerM3 / 70.85
+      floor > 10 * pressure
+    }
+
+    check("xenon tankage is dominated by pressure") {
+      val pressure = 1.5 * 150.0e5 / (1600.0 * Physics.tankSpecificStrengthJPerKg)
+      val floor = Physics.tankStructuralFloorKgPerM3 / 1600.0
+      pressure > 5 * floor
+    }
+
+    check("the fast-Mars nuclear thermal case sits under twice the assumed floor") {
+      val kcrit = Physics.criticalStructuralFloor(70.85, 1.0, 6.458)
+      kcrit > Physics.tankStructuralFloorKgPerM3 &&
+      kcrit < 2 * Physics.tankStructuralFloorKgPerM3
+    }
     println("dataset and comparison")
 
     Db.withConnection() { conn =>

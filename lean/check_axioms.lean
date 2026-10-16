@@ -38,3 +38,5 @@ import Propulsion.Basic
 #print axioms Propulsion.inertMassWithTank_zero
 #print axioms Propulsion.inertMassWithTank_lt_of_tankFraction_lt
 #print axioms Propulsion.le_inertMassWithTank
+#print axioms Propulsion.tankCloses_iff_lt_max
+#print axioms Propulsion.tankCloses_bound_antitone

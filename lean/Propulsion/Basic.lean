@@ -303,6 +303,26 @@ theorem tankMassFraction_lt_of_pressure_lt {ρ ψ κ P₁ P₂ : ℝ} (hρ : 0 <
 /-- The condition under which a vehicle carrying its own tank closes at all. -/
 def tankCloses (f mr : ℝ) : Prop := f * (mr - 1) < 1
 
+
+/-- **The closure condition as an explicit bound on the tank fraction.**
+
+For a mass ratio above one, a vehicle closes exactly when its tank fraction is below
+`1 / (MR - 1)`. This is the form the sensitivity study uses: it turns `tankCloses` from a
+predicate into a number that can be compared against a candidate tank design, and inverted to
+ask which structural floor a given engine can tolerate. -/
+theorem tankCloses_iff_lt_max {f mr : ℝ} (hmr : 1 < mr) :
+    tankCloses f mr ↔ f < 1 / (mr - 1) := by
+  unfold tankCloses
+  have hmr1 : 0 < mr - 1 := by linarith
+  rw [lt_div_iff₀ hmr1]
+
+/-- A larger mass ratio tolerates a smaller tank fraction. Doubling delta-v tightens the
+closure bound, which is why the same engine closes on a slow mission and not on a fast one. -/
+theorem tankCloses_bound_antitone {mr₁ mr₂ : ℝ} (h₁ : 1 < mr₁) (h : mr₁ < mr₂) :
+    1 / (mr₂ - 1) < 1 / (mr₁ - 1) := by
+  have hmr1 : 0 < mr₁ - 1 := by linarith
+  exact one_div_lt_one_div_of_lt hmr1 (by linarith)
+
 /-- Inert mass once the tank is charged against it, `m_f = base / (1 - f (MR - 1))`. -/
 def inertMassWithTank (base mr f : ℝ) : ℝ := base / (1 - f * (mr - 1))
 

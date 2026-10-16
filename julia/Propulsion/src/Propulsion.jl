@@ -42,6 +42,8 @@ export g0,
     TANK_STRUCTURAL_FLOOR_KG_PER_M3,
     tank_mass_fraction,
     inert_mass_with_tank,
+    max_tank_fraction,
+    critical_structural_floor,
     database_path,
     connect_db,
     close_db,
@@ -199,6 +201,39 @@ limit: past it the tank needed to hold the propellant is heavier than the propel
 and no finite vehicle closes. The corresponding Lean statement is
 `Propulsion.inertMassWithTank_pos`.
 """
+
+"""
+    max_tank_fraction(mass_ratio) -> Float64
+
+The largest tank fraction a vehicle at this mass ratio can carry and still close, `1/(MR-1)`.
+
+[`inert_mass_with_tank`](@ref) has a solution exactly when `f < max_tank_fraction(mr)`. Above
+it the tank needed to hold the propellant outweighs what the propellant buys back. Returns
+`Inf` for `mr <= 1`, where no propellant is needed and tankage is unconstrained. The Lean
+statement is `Propulsion.tankCloses_iff_lt_max`.
+"""
+max_tank_fraction(mass_ratio::Real) = mass_ratio > 1 ? 1 / (mass_ratio - 1) : Inf
+
+"""
+    critical_structural_floor(storage_density_kg_m3, storage_pressure_bar, mass_ratio) -> Float64
+
+The structural floor `kappa` at which a vehicle at this mass ratio stops closing.
+
+Inverts `f = 1.5 P / (rho psi) + kappa / rho` against `max_tank_fraction`. Negative means the
+pressure term alone already exceeds the limit, so no floor is small enough to save it.
+
+This is the number that matters for hydrogen. At 70.85 kg/m3 the floor term carries 94
+percent of the tank fraction and the pressure term only 6, so `kappa` rather than the wall
+strength decides whether a nuclear thermal vehicle closes at all.
+"""
+function critical_structural_floor(storage_density_kg_m3::Real, storage_pressure_bar::Real,
+                                   mass_ratio::Real)
+    rho = float(storage_density_kg_m3)
+    rho > 0 || throw(ArgumentError("storage density must be positive, got $rho"))
+    pressure_term = 1.5 * float(storage_pressure_bar) * 1.0e5 /
+                    (rho * TANK_SPECIFIC_STRENGTH_J_PER_KG)
+    rho * (max_tank_fraction(mass_ratio) - pressure_term)
+end
 function inert_mass_with_tank(base_inert_kg::Real, mass_ratio::Real, tank_fraction::Real)
     denom = 1 - tank_fraction * (mass_ratio - 1)
     denom > 0 || return nothing

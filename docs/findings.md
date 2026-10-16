@@ -269,6 +269,63 @@ move at all. That is enough to bring VASIMR back into the Mars top five at fourt
 Argon's position is therefore a statement about the tank assumption rather than about the
 thruster.
 
+### Nuclear thermal and the tank structural floor
+
+The wall-strength sweep above is the wrong knob for nuclear thermal propulsion, and seeing
+why is itself the result. The tank relation has two terms, and which one dominates depends
+entirely on storage density:
+
+| propellant | storage | pressure term | floor term | total |
+|---|---|---|---|---|
+| liquid hydrogen | 70.85 kg/m3, 1 bar | 0.0075 (6.2%) | 0.1129 (93.8%) | 0.1204 |
+| xenon | 1600 kg/m3, 150 bar | 0.0500 (90.9%) | 0.0050 (9.1%) | 0.0550 |
+
+They are mirror images. Xenon's tank is a pressure vessel and responds to wall strength;
+hydrogen's is a thin-walled box around a very large volume, and 94 percent of its mass comes
+from the structural and insulation floor. Changing the wall strength barely moves a nuclear
+thermal vehicle. Changing the floor decides whether it exists.
+
+`scripts/sensitivity.jl` sweeps the floor from 4 to 32 kg/m3 against the three nuclear
+thermal rows. The two crewed missions behave completely differently.
+
+On the nominal mission, at delta-v 7000 m/s and mass ratios near 2.2 to 2.4, nuclear thermal
+is insensitive. Every engine still closes at 32 kg/m3, four times the assumed value, and the
+closure limits sit at 50 to 58 kg/m3:
+
+| engine | MR | kappa = 4 | kappa = 8 | kappa = 16 | kappa = 32 | closes while kappa < |
+|---|---|---|---|---|---|---|
+| NASEM reference NTP | 2.210 | 216 t | 233 t | 277 t | 448 t | 58.0 |
+| Pewee | 2.327 | 229 t | 249 t | 303 t | 536 t | 52.8 |
+| Phoebus-2A | 2.388 | 236 t | 258 t | 318 t | 593 t | 50.5 |
+
+On the fast mission, at 15 000 m/s and mass ratios of 5.5 to 6.5, the same engines are
+fragile. Doubling the floor to 16 kg/m3 does not make them heavier; it makes them
+nonexistent.
+
+| engine | MR | kappa = 4 | kappa = 8 | kappa = 16 | closes while kappa < |
+|---|---|---|---|---|---|
+| NASEM reference NTP | 5.471 | 690 t | 1067 t | does not close | 15.3 |
+| Pewee | 6.111 | 817 t | 1431 t | does not close | 13.3 |
+| Phoebus-2A | 6.458 | 893 t | 1696 t | does not close | 12.4 |
+
+Phoebus-2A stops closing at 12.4 kg/m3, which is 1.55 times the assumed floor. The
+fast-mission nuclear thermal numbers reported earlier in this document therefore sit inside a
+factor of about 1.5 of a cliff, on a parameter this project chose rather than measured.
+
+The reason the two missions diverge is the closure condition itself. A vehicle closes while
+its tank fraction stays below `1/(MR - 1)`, so the tolerable fraction collapses as delta-v
+rises: 0.83 at the nominal mass ratio against 0.18 at the fast one. Lean states this as
+`tankCloses_iff_lt_max`, and `tankCloses_bound_antitone` gives the monotonicity that makes a
+faster mission strictly less forgiving. Hydrogen's 0.12 is comfortable against the first and
+close to the second.
+
+What does not change under any of this is the ranking. Nuclear thermal is heavier than the
+leading electric candidate on both missions across the whole range swept, including at the
+optimistic 4 kg/m3: 216 t against HiPEP's 153 t on the nominal mission, and 690 t against
+HERMeS AEPS at 452 t on the fast one. The sensitivity moves nuclear thermal between
+"expensive" and "impossible", never into contention on mass. Its case rests on trip time,
+which this comparison does not evaluate for it.
+
 The probe rankings do not move under any of the three. HiPEP, NEXT, T6 and XIPS-25 hold the
 top four places across every combination tried. The probe conclusion can be relied on; the
 crewed Mars conclusion cannot.
@@ -358,6 +415,14 @@ and calibrates the wall strength against a single xenon anchor; it carries no bo
 hardware, no feed system, no mounts, and no square-cube advantage for a large tank over a
 small one. It is enough to show that tankage reverses the krypton comparison, and not enough
 to size a real tank.
+
+Its weakest number is the 8 kg/m3 structural floor, which is calibrated against nothing. For
+xenon that hardly matters, since the floor is 9 percent of the tank. For liquid hydrogen it
+is 94 percent of it, and the sensitivity above shows the fast-mission nuclear thermal rows
+stop closing somewhere between 12 and 16 kg/m3. A measured dry mass for a long-duration
+liquid hydrogen tank, with insulation and boil-off hardware included and the boundary stated,
+would replace a guess that currently decides whether an entire propulsion class appears in
+the fast-mission results at all.
 
 Iodine appears in the propellants table and in the survey but contributes only the NPT30-I2,
 a 1 mN cubesat thruster that clears both probe missions and fails both crewed Mars missions

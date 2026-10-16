@@ -287,3 +287,45 @@ cross-implementation check, 816 without.
   and f_tank * mp inline at each use, which reintroduced the duplication the refactor existed
   to remove and diverged from the Scala twin. Both branches now name the three locals, as
   Comparison.scala does.
+
+## 2026-10-16
+
+### Tank sensitivity for the nuclear thermal hydrogen case
+- The existing wall-strength sweep is the wrong knob for nuclear thermal propulsion, and
+  finding out why is the result. The tank relation has two terms and storage density decides
+  which dominates. Liquid hydrogen at 70.85 kg/m3 takes 93.8 percent of its tank fraction
+  from the structural floor and 6.2 from pressure; xenon at 1600 kg/m3 and 150 bar is the
+  mirror image at 9.1 and 90.9. Wall strength barely moves a hydrogen vehicle. The floor
+  decides whether it exists.
+- scripts/sensitivity.jl gains an NTP section sweeping the structural floor from 4 to
+  32 kg/m3 against all three nuclear thermal rows on both crewed missions, reporting tank
+  fraction, initial mass, and the floor at which each engine stops closing.
+- The two missions behave oppositely. On the nominal mission, at mass ratios near 2.2 to 2.4,
+  every engine still closes at 32 kg/m3 and the limits sit at 50 to 58. On the fast mission,
+  at mass ratios of 5.5 to 6.5, doubling the floor to 16 does not make the engines heavier,
+  it makes them nonexistent. Phoebus-2A stops closing at 12.4 kg/m3, 1.55 times the assumed
+  value.
+- The reason is the closure condition: a vehicle closes while its tank fraction stays under
+  1/(MR-1), which collapses from 0.83 at the nominal mass ratio to 0.18 at the fast one.
+  Hydrogen's 0.12 is comfortable against the first and close to the second.
+- What does not move is the ranking. Nuclear thermal is heavier than the leading electric
+  candidate on both missions across the whole range swept, including at an optimistic
+  4 kg/m3. The sweep moves it between expensive and impossible, never into contention on
+  mass.
+
+### Supporting work
+- Added max_tank_fraction and critical_structural_floor in Julia, maxTankFraction and
+  criticalStructuralFloor in Scala. The first turns the closure predicate into a number the
+  sensitivity can compare against; the second inverts the tank relation to ask which floor a
+  given engine tolerates.
+- Lean gains tankCloses_iff_lt_max, that a vehicle closes exactly when f < 1/(MR-1), and
+  tankCloses_bound_antitone, that a larger mass ratio tolerates strictly less tankage. 32
+  theorems, all axiom-clean.
+- Tests: 1585 Julia, 42 Scala. One pins a Float64 limit worth knowing. The closure boundary is
+  exact over the reals and is not representable: at a tank fraction within rounding of the
+  limit the denominator is a tiny positive number rather than zero, so the model returns an
+  absurd mass rather than refusing. The test asserts the result is either nothing or above
+  1e15 kg, and that every propellant actually used sits far from its limit.
+- docs/findings.md gains the section, and the tank caveat now names the 8 kg/m3 floor as the
+  model's weakest number: 9 percent of a xenon tank, 94 percent of a hydrogen one, and the
+  thing that decides whether a whole propulsion class appears in the fast-mission results.

@@ -131,6 +131,66 @@ using DataFrames
         @test inert_mass_with_tank(base, 3.0, 0.49) !== nothing
     end
 
+
+    @testset "tank closure limit" begin
+        # inert_mass_with_tank closes exactly when f < max_tank_fraction(mr).
+        # inert_mass_with_tank closes exactly when f < max_tank_fraction(mr).
+        # Lean: tankCloses_iff_lt_max.
+        for mr in (1.5, 2.2, 5.5, 6.46)
+            fmax = max_tank_fraction(mr)
+            @test inert_mass_with_tank(1000.0, mr, fmax * 0.99) !== nothing
+            @test inert_mass_with_tank(1000.0, mr, fmax * 1.01) === nothing
+        end
+
+        # The boundary itself is not exactly representable. At f within rounding of the
+        # limit the denominator is a tiny positive number rather than zero, so the model
+        # returns an absurd mass instead of nothing. The Lean statement is exact over the
+        # reals; Float64 is not, and the guard in practice is distance from the limit.
+        for mr in (2.2, 5.5, 6.46)
+            at_limit = inert_mass_with_tank(1000.0, mr, max_tank_fraction(mr))
+            @test at_limit === nothing || at_limit > 1e15
+        end
+
+        # Every propellant the comparison actually uses sits far from its limit on both
+        # crewed missions, so the model never operates near that boundary.
+        for (rho, p_bar) in ((1600.0, 150.0), (650.0, 200.0), (70.85, 1.0), (500.0, 300.0))
+            f = tank_mass_fraction(rho, p_bar)
+            @test f < 0.5 * max_tank_fraction(2.4)   # nominal Mars, worst NTP mass ratio
+        end
+        # A larger mass ratio tolerates a smaller tank fraction.
+        # Lean: tankCloses_bound_antitone.
+        @test issorted([max_tank_fraction(mr) for mr in (1.5, 2.5, 4.0, 6.5)], rev = true)
+
+        # No propellant needed, so tankage is unconstrained.
+        @test max_tank_fraction(1.0) == Inf
+        @test max_tank_fraction(0.5) == Inf
+
+        # critical_structural_floor inverts the tank relation: at exactly that kappa the
+        # fraction equals the closure limit.
+        rho, p_bar = 70.85, 1.0
+        for mr in (2.21, 5.47, 6.46)
+            kcrit = critical_structural_floor(rho, p_bar, mr)
+            f_at_crit = 1.5 * p_bar * 1e5 / (rho * TANK_SPECIFIC_STRENGTH_J_PER_KG) + kcrit / rho
+            @test isapprox(f_at_crit, max_tank_fraction(mr), rtol = 1e-12)
+        end
+        @test_throws ArgumentError critical_structural_floor(0.0, 1.0, 2.0)
+
+        # Hydrogen's tank is dominated by the structural floor, xenon's by pressure. That is
+        # why the wall-strength sweep moves the electric cases and barely touches NTP.
+        h2_pressure = 1.5 * 1e5 / (70.85 * TANK_SPECIFIC_STRENGTH_J_PER_KG)
+        h2_floor = TANK_STRUCTURAL_FLOOR_KG_PER_M3 / 70.85
+        @test h2_floor > 10 * h2_pressure
+
+        xe_pressure = 1.5 * 150e5 / (1600.0 * TANK_SPECIFIC_STRENGTH_J_PER_KG)
+        xe_floor = TANK_STRUCTURAL_FLOOR_KG_PER_M3 / 1600.0
+        @test xe_pressure > 5 * xe_floor
+
+        # The fast Mars mission is where the NTP case is fragile: Phoebus-2A at MR 6.46
+        # stops closing below twice the assumed structural floor of 8 kg/m3.
+        kcrit_fast = critical_structural_floor(70.85, 1.0, 6.458)
+        @test TANK_STRUCTURAL_FLOOR_KG_PER_M3 < kcrit_fast < 2 * TANK_STRUCTURAL_FLOOR_KG_PER_M3
+    end
+
     con = connect_db()
     try
         thrusters = load_thrusters(con)

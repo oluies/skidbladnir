@@ -74,6 +74,67 @@ function show_case(mission, label, r)
     end
 end
 
+
+# ---------------------------------------------------------------- NTP tankage
+#
+# The electric sweep above varies the tank wall strength, which scales the pressure term.
+# That is the wrong knob for a nuclear thermal vehicle. Liquid hydrogen at 70.85 kg/m3 takes
+# 94 percent of its tank fraction from the structural and insulation floor kappa/rho and only
+# 6 percent from pressure, so psi barely moves it. This section sweeps kappa instead, and
+# reports how close each engine sits to the closure limit f < 1/(MR-1).
+
+"Tank fraction for a propellant at an explicit structural floor."
+function tank_fraction_at(rho, p_bar, kappa)
+    1.5 * p_bar * 1.0e5 / (rho * TANK_SPECIFIC_STRENGTH_J_PER_KG) + kappa / rho
+end
+
+function ntp_tank_sensitivity(missions, thrusters, propellants)
+    h2 = first(eachrow(propellants[propellants.propellant .== "hydrogen", :]))
+    rho, p_bar = h2.storage_density_kg_m3, h2.storage_pressure_bar
+    ntp = thrusters[(thrusters.propellant .== "hydrogen") .& .!ismiss.(thrusters.isp_s), :]
+
+    println("\n", "="^92)
+    println("Nuclear thermal: sensitivity to the tank structural floor")
+    println("="^92)
+    @printf("\nliquid hydrogen at %.2f kg/m3 and %.0f bar\n", rho, p_bar)
+    @printf("  pressure term %.5f (%.1f percent of the baseline fraction)\n",
+            tank_fraction_at(rho, p_bar, 0.0),
+            100 * tank_fraction_at(rho, p_bar, 0.0) / tank_fraction_at(rho, p_bar, 8.0))
+    @printf("  floor term at kappa=8: %.5f (%.1f percent)\n",
+            8 / rho, 100 * (8 / rho) / tank_fraction_at(rho, p_bar, 8.0))
+    println("\nThe floor dominates, so kappa rather than the wall strength decides this case.")
+
+    for mid in ("mars_crew_nominal", "mars_crew_fast")
+        mission = first(eachrow(missions[missions.mission_id .== mid, :]))
+        println("\n", "-"^92)
+        @printf("%s   payload %d kg, dv %d m/s\n",
+                mission.name, Int(mission.payload_mass_kg), Int(mission.delta_v_m_s))
+        println("-"^92)
+        for t in eachrow(ntp)
+            ve = exhaust_velocity(t.isp_s)
+            mr = mass_ratio(mission.delta_v_m_s, ve)
+            fmax = max_tank_fraction(mr)
+            kcrit = critical_structural_floor(rho, p_bar, mr)
+            @printf("\n  %-22s Isp %4.0f s  MR %.3f   closes while f < %.4f (kappa < %.1f kg/m3)\n",
+                    t.name, t.isp_s, mr, fmax, kcrit)
+            for kappa in (4.0, 8.0, 16.0, 32.0)
+                f = tank_fraction_at(rho, p_bar, kappa)
+                inert = inert_mass_with_tank(mission.payload_mass_kg, mr, f)
+                if inert === nothing
+                    @printf("     kappa %5.1f  f %.4f   does not close\n", kappa, f)
+                else
+                    mp = inert * (mr - 1)
+                    @printf("     kappa %5.1f  f %.4f   m0 %10.0f kg   tank %9.0f kg   %+6.1f%% vs kappa=8\n",
+                            kappa, f, inert * mr, f * mp,
+                            100 * (inert * mr) /
+                            (inert_mass_with_tank(mission.payload_mass_kg, mr,
+                                                  tank_fraction_at(rho, p_bar, 8.0)) * mr) - 100)
+                end
+            end
+        end
+    end
+end
+
 try
     for mid in ("mars_crew_nominal", "probe500_nominal")
         mission = first(eachrow(missions[missions.mission_id .== mid, :]))
@@ -112,6 +173,7 @@ try
                            tsm = THRUSTER_SPECIFIC_MASS_KG_PER_KW, psi_scale = psi))
         end
     end
+    ntp_tank_sensitivity(missions, thrusters, propellants)
 finally
     close_db(con)
 end
