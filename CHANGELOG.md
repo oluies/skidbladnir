@@ -399,3 +399,8 @@ cross-implementation check, 816 without.
   annotations now describe what the commands check without counting: "assertion-based
   self-tests" and "SQL range and consistency checks". Precise counts stay in docs/findings.md
   and this file, where they are verification claims rather than usage notes.
+
+### Review 2011 correction
+- The last row of the mission summary table gave its margin as a bare "0.74 to 0.96" while
+  the three rows above label the same quantity "times margin". Labelled, and the column
+  header now names the quantity as kcrit/8 so the figure does not have to be inferred.
