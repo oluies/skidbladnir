@@ -134,7 +134,6 @@ using DataFrames
 
     @testset "tank closure limit" begin
         # inert_mass_with_tank closes exactly when f < max_tank_fraction(mr).
-        # inert_mass_with_tank closes exactly when f < max_tank_fraction(mr).
         # Lean: tankCloses_iff_lt_max.
         for mr in (1.5, 2.2, 5.5, 6.46)
             fmax = max_tank_fraction(mr)

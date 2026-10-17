@@ -225,7 +225,7 @@ tank mass and thrusting time, with the rows that fail their time cap drawn pale.
 The Scala and Julia pipelines implement the relations separately rather than sharing code.
 The Julia test suite joins both producers' rows in the `results` table and requires
 agreement to 1e-9 relative. All 124 rows agree on initial mass, propellant mass, tank mass,
-trip time, thruster count and feasibility. 1560 Julia tests and 35 Scala self-tests pass, and
+trip time, thruster count and feasibility. 1585 Julia tests and 42 Scala self-tests pass, and
 SQL validation reports no errors over 17 checks.
 
 The Lean development proves the relations the comparison uses, including
@@ -234,7 +234,8 @@ The Lean development proves the relations the comparison uses, including
 specific impulse. The tankage section adds `inertMassWithTank_fixed_point`, that the closed
 form really solves the fixed point, `inertMassWithTank_pos`, that a vehicle closes exactly
 when `f (MR - 1) < 1`, and `tankMassFraction_lt_of_density_lt`, that denser storage means a
-lighter tank, which is krypton's problem stated formally. All 30 theorems depend only on
+lighter tank, which is krypton's problem stated formally, and `tankCloses_iff_lt_max`, that a
+vehicle closes exactly when its tank fraction is below 1/(MR-1). All 32 theorems depend only on
 Lean's three standard axioms.
 
 One gap between the proof and the code is worth recording. The mass-fraction bound is
@@ -245,9 +246,11 @@ in `julia/Propulsion/test/runtests.jl` pins both facts so the gap cannot close s
 
 ## Sensitivity
 
-`scripts/sensitivity.jl` recomputes the rankings with the three unmeasured assumptions varied
-by a factor of two in each direction: power plant specific mass, thruster dry mass, and the
-tank wall's effective specific strength.
+`scripts/sensitivity.jl` recomputes the rankings with the four unmeasured assumptions varied
+by a factor of two in each direction: power plant specific mass, thruster dry mass, the tank
+wall's effective specific strength, and the tank structural floor. The first three are swept
+against the electric candidates; the floor is swept against the nuclear thermal rows, where it
+carries 94 percent of the tank fraction.
 
 For the crewed Mars nominal mission, halving power plant specific mass from 20 to 10 kg/kW
 drops HiPEP's initial mass from 153 t to 131 t. Doubling it to 40 kg/kW removes HiPEP from
@@ -268,6 +271,10 @@ move at all. That is enough to bring VASIMR back into the Mars top five at fourt
 167 t; halving the wall strength leaves VASIMR out and pushes T6's tank from 1.4 t to 2.7 t.
 Argon's position is therefore a statement about the tank assumption rather than about the
 thruster.
+
+The probe rankings do not move under any of the three electric knobs. HiPEP, NEXT, T6 and
+XIPS-25 hold the top four places across every combination tried. The probe conclusion can be
+relied on; the crewed Mars conclusion cannot.
 
 ### Nuclear thermal and the tank structural floor
 
@@ -325,10 +332,6 @@ optimistic 4 kg/m3: 216 t against HiPEP's 153 t on the nominal mission, and 690 
 HERMeS AEPS at 452 t on the fast one. The sensitivity moves nuclear thermal between
 "expensive" and "impossible", never into contention on mass. Its case rests on trip time,
 which this comparison does not evaluate for it.
-
-The probe rankings do not move under any of the three. HiPEP, NEXT, T6 and XIPS-25 hold the
-top four places across every combination tried. The probe conclusion can be relied on; the
-crewed Mars conclusion cannot.
 
 Figures are in `docs/figures`: `trip_time.png`, `initial_mass.png`, `propellant_mass.png`,
 `isp_vs_trip_time.png` and `krypton_vs_xenon.png`.

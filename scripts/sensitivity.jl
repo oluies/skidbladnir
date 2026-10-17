@@ -1,8 +1,10 @@
 #!/usr/bin/env julia
 #
-# Sensitivity of the ranking to the three assumptions the literature does not pin down:
+# Sensitivity of the ranking to the four assumptions the literature does not pin down:
 # power plant specific mass (alpha), thruster plus power-processing dry mass, and the tank
-# wall's effective specific strength.
+# wall's effective specific strength, and its structural floor kappa. The first three are
+# swept against the electric candidates; kappa is swept against the nuclear thermal rows,
+# where it carries 94 percent of the tank fraction.
 #
 #     julia --project=julia/Propulsion scripts/sensitivity.jl
 #
@@ -91,17 +93,22 @@ end
 function ntp_tank_sensitivity(missions, thrusters, propellants)
     h2 = first(eachrow(propellants[propellants.propellant .== "hydrogen", :]))
     rho, p_bar = h2.storage_density_kg_m3, h2.storage_pressure_bar
-    ntp = thrusters[(thrusters.propellant .== "hydrogen") .& .!ismiss.(thrusters.isp_s), :]
+    # Select by thruster_type, not propellant: a future hydrogen electric row would need the
+    # electric branch's power plant and thruster mass, which this section does not charge.
+    ntp = thrusters[(thrusters.thruster_type .== "nuclear_thermal") .&
+                    .!ismiss.(thrusters.isp_s), :]
 
     println("\n", "="^92)
     println("Nuclear thermal: sensitivity to the tank structural floor")
     println("="^92)
+    kappa0 = TANK_STRUCTURAL_FLOOR_KG_PER_M3
+    f0 = tank_fraction_at(rho, p_bar, kappa0)
     @printf("\nliquid hydrogen at %.2f kg/m3 and %.0f bar\n", rho, p_bar)
     @printf("  pressure term %.5f (%.1f percent of the baseline fraction)\n",
             tank_fraction_at(rho, p_bar, 0.0),
-            100 * tank_fraction_at(rho, p_bar, 0.0) / tank_fraction_at(rho, p_bar, 8.0))
-    @printf("  floor term at kappa=8: %.5f (%.1f percent)\n",
-            8 / rho, 100 * (8 / rho) / tank_fraction_at(rho, p_bar, 8.0))
+            100 * tank_fraction_at(rho, p_bar, 0.0) / f0)
+    @printf("  floor term at kappa=%.0f: %.5f (%.1f percent)\n",
+            kappa0, kappa0 / rho, 100 * (kappa0 / rho) / f0)
     println("\nThe floor dominates, so kappa rather than the wall strength decides this case.")
 
     for mid in ("mars_crew_nominal", "mars_crew_fast")
@@ -115,20 +122,21 @@ function ntp_tank_sensitivity(missions, thrusters, propellants)
             mr = mass_ratio(mission.delta_v_m_s, ve)
             fmax = max_tank_fraction(mr)
             kcrit = critical_structural_floor(rho, p_bar, mr)
+            # Baseline for the comparison column, computed once per engine.
+            inert0 = inert_mass_with_tank(mission.payload_mass_kg, mr, f0)
+            m0_base = inert0 === nothing ? nothing : inert0 * mr
             @printf("\n  %-22s Isp %4.0f s  MR %.3f   closes while f < %.4f (kappa < %.1f kg/m3)\n",
                     t.name, t.isp_s, mr, fmax, kcrit)
-            for kappa in (4.0, 8.0, 16.0, 32.0)
+            for kappa in (kappa0 / 2, kappa0, kappa0 * 2, kappa0 * 4)
                 f = tank_fraction_at(rho, p_bar, kappa)
                 inert = inert_mass_with_tank(mission.payload_mass_kg, mr, f)
                 if inert === nothing
                     @printf("     kappa %5.1f  f %.4f   does not close\n", kappa, f)
                 else
-                    mp = inert * (mr - 1)
-                    @printf("     kappa %5.1f  f %.4f   m0 %10.0f kg   tank %9.0f kg   %+6.1f%% vs kappa=8\n",
-                            kappa, f, inert * mr, f * mp,
-                            100 * (inert * mr) /
-                            (inert_mass_with_tank(mission.payload_mass_kg, mr,
-                                                  tank_fraction_at(rho, p_bar, 8.0)) * mr) - 100)
+                    m0 = inert * mr
+                    delta = m0_base === nothing ? NaN : 100 * m0 / m0_base - 100
+                    @printf("     kappa %5.1f  f %.4f   m0 %10.0f kg   tank %9.0f kg   %+6.1f%% vs kappa=%.0f\n",
+                            kappa, f, m0, f * inert * (mr - 1), delta, kappa0)
                 end
             end
         end

@@ -201,6 +201,11 @@ limit: past it the tank needed to hold the propellant is heavier than the propel
 and no finite vehicle closes. The corresponding Lean statement is
 `Propulsion.inertMassWithTank_pos`.
 """
+function inert_mass_with_tank(base_inert_kg::Real, mass_ratio::Real, tank_fraction::Real)
+    denom = 1 - tank_fraction * (mass_ratio - 1)
+    denom > 0 || return nothing
+    base_inert_kg / denom
+end
 
 """
     max_tank_fraction(mass_ratio) -> Float64
@@ -233,11 +238,6 @@ function critical_structural_floor(storage_density_kg_m3::Real, storage_pressure
     pressure_term = 1.5 * float(storage_pressure_bar) * 1.0e5 /
                     (rho * TANK_SPECIFIC_STRENGTH_J_PER_KG)
     rho * (max_tank_fraction(mass_ratio) - pressure_term)
-end
-function inert_mass_with_tank(base_inert_kg::Real, mass_ratio::Real, tank_fraction::Real)
-    denom = 1 - tank_fraction * (mass_ratio - 1)
-    denom > 0 || return nothing
-    base_inert_kg / denom
 end
 
 # ------------------------------------------------------------ delta-v budget

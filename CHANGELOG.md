@@ -329,3 +329,28 @@ cross-implementation check, 816 without.
 - docs/findings.md gains the section, and the tank caveat now names the 8 kg/m3 floor as the
   model's weakest number: 9 percent of a xenon tank, 94 percent of a hydrogen one, and the
   thing that decides whether a whole propulsion class appears in the fast-mission results.
+
+### Review 1989 corrections
+- The two new closure helpers had been inserted between inert_mass_with_tank's docstring and
+  its definition, which orphaned the docstring. Julia does not attach a docstring across a
+  blank line, so it became a bare string literal: the module loaded, every test passed, and
+  `?inert_mass_with_tank` silently returned nothing. The helpers now sit below the function.
+  All three docstrings verified attached.
+- docs/findings.md still carried the pre-commit counts, 1560 Julia / 35 Scala and 30
+  theorems, against the actual 1585 / 42 / 32. The CHANGELOG entry under the 2026-10-15 tank
+  model section still says 1560 / 35 and is left alone: it is dated history that was correct
+  when written, not drift.
+- The sensitivity section swept four parameters while describing three, in both the document
+  and the script header. Both now name the structural floor as the fourth and say which knobs
+  apply to which candidates.
+- The probe paragraph had been stranded at the end of the new nuclear thermal subsection,
+  where "any of the three" read as the floor sweep. Moved back above the subsection and
+  qualified as the three electric knobs; the probe missions carry no hydrogen.
+- The NTP sweep hardcoded the 8 kg/m3 baseline in four places while arguing that the floor
+  should be retuned. It now reads TANK_STRUCTURAL_FLOOR_KG_PER_M3, sweeps half to four times
+  that value rather than fixed numbers, and hoists the baseline mass out of the inner loop.
+  Output is unchanged at the current constant.
+- The NTP rows were selected by propellant rather than thruster_type. A future hydrogen
+  electric row would have been printed under the nuclear thermal heading and sized without
+  its power plant. Now filtered on thruster_type.
+- Removed a duplicated comment line in the new testset.
