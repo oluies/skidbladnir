@@ -111,8 +111,14 @@ function ntp_tank_sensitivity(missions, thrusters, propellants)
     @printf("  floor term at kappa=%.0f: %.5f (%.1f percent)\n",
             kappa0, kappa0 / rho, 100 * (kappa0 / rho) / f0)
     println("\nThe floor dominates, so kappa rather than the wall strength decides this case.")
+    println("""
+Note on the probe missions: a nuclear thermal engine pushing a 500 kg payload is not a
+design. This model excludes engine dry mass, and a Rover-class reactor masses tonnes against
+that payload, so the probe rows below are a statement about the tank model's sensitivity
+rather than about a vehicle anyone would build. They are included because they are the
+tightest closure margins in the study.""")
 
-    for mid in ("mars_crew_nominal", "mars_crew_fast")
+    for mid in ("mars_crew_nominal", "mars_crew_fast", "probe500_nominal", "probe500_aggressive")
         mission = first(eachrow(missions[missions.mission_id .== mid, :]))
         println("\n", "-"^92)
         @printf("%s   payload %d kg, dv %d m/s\n",
@@ -126,18 +132,23 @@ function ntp_tank_sensitivity(missions, thrusters, propellants)
             # Baseline for the comparison column, computed once per engine.
             inert0 = inert_mass_with_tank(mission.payload_mass_kg, mr, f0)
             m0_base = inert0 === nothing ? nothing : inert0 * mr
-            @printf("\n  %-22s Isp %4.0f s  MR %.3f   closes while f < %.4f (kappa < %.1f kg/m3)\n",
+            closes0 = m0_base === nothing ? "does not close at the baseline floor" :
+                      @sprintf("%.0f kg at the baseline floor", m0_base)
+            @printf("\n  %-22s Isp %4.0f s  MR %6.3f   closes while f < %.4f (kappa < %.2f kg/m3)\n",
                     t.name, t.isp_s, mr, fmax, kcrit)
+            @printf("                         %s\n", closes0)
             for kappa in (kappa0 / 2, kappa0, kappa0 * 2, kappa0 * 4)
                 f = tank_fraction_at(rho, p_bar, kappa)
                 inert = inert_mass_with_tank(mission.payload_mass_kg, mr, f)
                 if inert === nothing
                     @printf("     kappa %5.1f  f %.4f   does not close\n", kappa, f)
+                elseif m0_base === nothing
+                    @printf("     kappa %5.1f  f %.4f   m0 %10.0f kg   tank %9.0f kg        -\n",
+                            kappa, f, inert * mr, f * inert * (mr - 1))
                 else
                     m0 = inert * mr
-                    delta = m0_base === nothing ? NaN : 100 * m0 / m0_base - 100
                     @printf("     kappa %5.1f  f %.4f   m0 %10.0f kg   tank %9.0f kg   %+6.1f%% vs kappa=%.0f\n",
-                            kappa, f, m0, f * inert * (mr - 1), delta, kappa0)
+                            kappa, f, m0, f * inert * (mr - 1), 100 * m0 / m0_base - 100, kappa0)
                 end
             end
         end

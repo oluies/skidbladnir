@@ -234,6 +234,23 @@ object Verify:
       kcrit > Physics.tankStructuralFloorKgPerM3 &&
       kcrit < 2 * Physics.tankStructuralFloorKgPerM3
     }
+
+    // The high-energy probe is the tightest case in the study and sits the wrong side of the
+    // line: the tolerable floor there falls below the 8 kg/m3 assumed, so the nuclear thermal
+    // rows do not close at all. The best of the three misses by about four percent.
+    check("the high-energy probe nuclear thermal case falls below the assumed floor") {
+      Seq(900.0, 845.0, 820.0).forall { isp =>
+        val mr = Physics.massRatio(20000.0, Physics.exhaustVelocity(isp))
+        Physics.criticalStructuralFloor(70.85, 1.0, mr) < Physics.tankStructuralFloorKgPerM3 &&
+        Physics.inertMassWithTank(500.0, mr, Physics.tankMassFraction(70.85, 1.0)).isEmpty
+      }
+    }
+
+    check("the best engine misses the high-energy probe by a small margin") {
+      val mr = Physics.massRatio(20000.0, Physics.exhaustVelocity(900.0))
+      Physics.criticalStructuralFloor(70.85, 1.0, mr) >
+        0.9 * Physics.tankStructuralFloorKgPerM3
+    }
     println("dataset and comparison")
 
     Db.withConnection() { conn =>

@@ -188,6 +188,21 @@ using DataFrames
         # stops closing below twice the assumed structural floor of 8 kg/m3.
         kcrit_fast = critical_structural_floor(70.85, 1.0, 6.458)
         @test TANK_STRUCTURAL_FLOOR_KG_PER_M3 < kcrit_fast < 2 * TANK_STRUCTURAL_FLOOR_KG_PER_M3
+
+        # The high-energy probe is the tightest case in the study and sits the wrong side of
+        # the line: at mass ratios near 9.6 to 12 the tolerable floor falls below the 8 kg/m3
+        # assumed, so the nuclear thermal rows do not close there at all. The margin is four
+        # percent for the best of the three, which is why those rows are a statement about
+        # the assumption rather than a physical conclusion.
+        for isp in (900.0, 845.0, 820.0)
+            mr = mass_ratio(20000.0, exhaust_velocity(isp))
+            @test critical_structural_floor(70.85, 1.0, mr) < TANK_STRUCTURAL_FLOOR_KG_PER_M3
+            @test inert_mass_with_tank(500.0, mr, tank_mass_fraction(70.85, 1.0)) === nothing
+        end
+        # The best engine misses by a small margin rather than a large one.
+        mr_best = mass_ratio(20000.0, exhaust_velocity(900.0))
+        @test critical_structural_floor(70.85, 1.0, mr_best) >
+              0.9 * TANK_STRUCTURAL_FLOOR_KG_PER_M3
     end
 
     con = connect_db()

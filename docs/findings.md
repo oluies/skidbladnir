@@ -130,7 +130,8 @@ from power-plant-dominated to propellant-dominated.
 ## 500 kg deep-space probe
 
 20 kW solar electric, 3650-day cap. Nominal has all 31 candidates feasible; the high-energy
-variant loses three, all of them to tankage rather than time.
+variant loses three, all of them nuclear thermal and all of them to tankage rather than time;
+the structural-floor sweep below explains why.
 
 Nominal, 12 000 m/s:
 
@@ -225,7 +226,7 @@ tank mass and thrusting time, with the rows that fail their time cap drawn pale.
 The Scala and Julia pipelines implement the relations separately rather than sharing code.
 The Julia test suite joins both producers' rows in the `results` table and requires
 agreement to 1e-9 relative. All 124 rows agree on initial mass, propellant mass, tank mass,
-trip time, thruster count and feasibility. 1585 Julia tests and 42 Scala self-tests pass, and
+trip time, thruster count and feasibility. 1592 Julia tests and 44 Scala self-tests pass, and
 SQL validation reports no errors over 17 checks.
 
 The Lean development proves the relations the comparison uses, including
@@ -327,10 +328,40 @@ rises: 0.83 at the nominal mass ratio against 0.18 at the fast one. Lean states 
 faster mission strictly less forgiving. Hydrogen's 0.12 is comfortable against the first and
 close to the second.
 
+The same sweep run against the two probe missions completes the picture, and it explains a
+result reported earlier in this document. A nuclear thermal engine pushing a 500 kg payload
+is not a design: the model excludes engine dry mass, and a Rover-class reactor masses tonnes
+against that payload, so these rows say something about the tank model rather than about a
+vehicle anyone would build. What they say is worth having, because they are the tightest
+closure margins in the study.
+
+| mission | MR range | closes while kappa < | at the baseline 8 kg/m3 |
+|---|---|---|---|
+| Crewed Mars, nominal | 2.21 to 2.39 | 50.5 to 58.0 | closes, 4 to 7 times margin |
+| 500 kg probe, nominal | 3.90 to 4.45 | 20.0 to 23.9 | closes, 2.5 to 3 times margin |
+| Crewed Mars, fast | 5.47 to 6.46 | 12.4 to 15.3 | closes, 1.6 to 1.9 times margin |
+| 500 kg probe, high energy | 9.64 to 12.03 | 5.9 to 7.7 | does not close |
+
+The ordering is monotone in mass ratio, which is `tankCloses_bound_antitone` restated in
+kilograms: every increase in delta-v tightens the tolerable tank fraction, and hydrogen's
+0.1204 crosses the line somewhere between the fast Mars mission and the high-energy probe.
+
+The high-energy probe is where the model is at its least trustworthy. The best of the three
+engines, the NASEM reference at mass ratio 9.64, tolerates a floor up to 7.67 kg/m3 against
+the 8.0 assumed. It fails by four percent. Those are the three infeasible rows on that
+mission noted earlier: they are not a physical conclusion, they are a chosen constant landing
+just the wrong side of a threshold. At 4 kg/m3 all three close, the NASEM reference at 10.8 t
+on a 500 kg payload.
+
+On the probe's nominal mission the margin is real but not large. All three engines close at
+the baseline, at 3.0 to 3.8 t, and all three stop closing by 32 kg/m3; doubling the floor to
+16 raises initial mass by 101 to 199 percent.
+
 What does not change under any of this is the ranking. Nuclear thermal is heavier than the
-leading electric candidate on both missions across the whole range swept, including at the
-optimistic 4 kg/m3: 216 t against HiPEP's 153 t on the nominal mission, and 690 t against
-HERMeS AEPS at 452 t on the fast one. The sensitivity moves nuclear thermal between
+leading electric candidate on all four missions across the whole range swept, including at the
+optimistic 4 kg/m3: 216 t against HiPEP's 153 t on the nominal Mars mission, 690 t against
+HERMeS AEPS at 452 t on the fast one, 2.4 t against 1.0 t on the nominal probe and 10.8 t
+against 1.1 t on the high-energy probe. The sensitivity moves nuclear thermal between
 "expensive" and "impossible", never into contention on mass. Its case rests on trip time,
 which this comparison does not evaluate for it.
 

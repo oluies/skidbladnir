@@ -362,3 +362,28 @@ cross-implementation check, 816 without.
   electric knobs move by roughly a factor of two, the floor from half to four times.
 - The script header had a stray conjunction left from appending a fourth item to a
   three-item list.
+
+### Probe missions added to the NTP tank sweep
+- The structural-floor sweep now covers all four missions rather than the two crewed ones.
+  The probe rows explain a result already in the comparison: the three infeasible rows on the
+  high-energy probe are the three nuclear thermal engines, failing on tankage.
+- Fragility is monotone in mass ratio, which is tankCloses_bound_antitone restated in
+  kilograms. Tolerable floor by mission: crewed Mars nominal 50.5 to 58.0 kg/m3, probe
+  nominal 20.0 to 23.9, crewed Mars fast 12.4 to 15.3, probe high energy 5.9 to 7.7.
+  Hydrogen's 0.1204 fraction crosses the line between the last two.
+- The high-energy probe is where the model is least trustworthy. The best engine, the NASEM
+  reference at mass ratio 9.64, tolerates a floor up to 7.67 kg/m3 against the 8.0 assumed.
+  It fails by four percent. Those rows are a chosen constant landing just the wrong side of a
+  threshold, not a physical conclusion.
+- Stated plainly in the script output and the document: a nuclear thermal engine pushing a
+  500 kg payload is not a design. The model excludes engine dry mass and a Rover-class
+  reactor masses tonnes against that payload. The rows are included because they are the
+  tightest closure margins in the study, not because the vehicle is credible.
+- The sweep output now reports the baseline mass per engine and prints a dash rather than a
+  NaN in the comparison column when the baseline itself does not close.
+- The ranking is unchanged on all four missions: nuclear thermal stays heavier than the
+  leading electric candidate across the whole range swept, 2.4 t against 1.0 t on the nominal
+  probe and 10.8 t against 1.1 t on the high-energy one.
+- Tests: 1592 Julia, 44 Scala. New tests pin that all three nuclear thermal engines fall
+  below the assumed floor on the high-energy probe, and that the best of them misses by a
+  small margin rather than a large one.
