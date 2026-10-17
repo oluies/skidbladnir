@@ -168,3 +168,27 @@ SELECT
     derived_fields,
     source_id
 FROM v_electric_thrusters;
+
+-- Internal consistency of a nuclear thermal row.
+--
+-- The nozzle converts reactor thermal power into jet power, so the jet power implied by the
+-- quoted thrust and specific impulse, P_jet = T * g0 * Isp / 2, can never exceed the reactor
+-- thermal power, and in practice is a large fraction of it. This is the nuclear thermal
+-- analogue of v_thruster_consistency, which only covers electrical rows and so left the NTP
+-- thrust figures unchecked. A thrust recorded in the wrong unit shows up here immediately:
+-- Phoebus-2A at 930 N instead of 930 kN gives a ratio of 0.0009 rather than 0.92.
+CREATE OR REPLACE VIEW v_ntp_consistency AS
+SELECT
+    thruster_id,
+    name,
+    thrust_mN / 1000.0                                      AS thrust_N,
+    isp_s,
+    input_power_W                                           AS reactor_thermal_W,
+    (thrust_mN / 1000.0) * 9.80665 * isp_s / 2.0            AS jet_power_W,
+    (thrust_mN / 1000.0) * 9.80665 * isp_s / 2.0
+        / input_power_W                                     AS jet_to_reactor_ratio
+FROM thrusters
+WHERE thruster_type = 'nuclear_thermal'
+  AND thrust_mN IS NOT NULL
+  AND isp_s IS NOT NULL
+  AND input_power_W IS NOT NULL;

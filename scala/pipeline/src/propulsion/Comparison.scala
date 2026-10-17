@@ -136,7 +136,13 @@ object Comparison:
           else if mission.powerAvailableW.isEmpty then "mission states no available power"
           else "row lacks one of thrust, Isp, power or efficiency"
 
-        Physics.inertMassWithTank(mission.payloadMassKg, mr, tankFraction) match
+        // Charge engine dry mass where the source gives one. ntp_nerva_derived does; the
+        // Rover reactor tests and the NASEM study reference do not, because a reactor test
+        // is not an engine, so those rows stay optimistic by an unrecorded amount.
+        val engineMass = t.massKg.getOrElse(0.0)
+        val baseInertNonElectric = mission.payloadMassKg + engineMass
+
+        Physics.inertMassWithTank(baseInertNonElectric, mr, tankFraction) match
           case None =>
             base.copy(
               notes = f"$why; tankage diverges at f=$tankFraction%.3f and MR=$mr%.3f"
@@ -152,7 +158,7 @@ object Comparison:
               initialMassKg = Some(m0),
               tankMassKg = Some(tankMass),
               feasible = sane,
-              notes = f"$why; engine dry mass excluded; tank $tankMass%.0f kg at f=$tankFraction%.3f"
+              notes = f"$why; " + (if engineMass > 0 then f"engine dry mass $engineMass%.0f kg" else "engine dry mass not recorded and excluded") + f"; tank $tankMass%.0f kg at f=$tankFraction%.3f"
             )
     }
 

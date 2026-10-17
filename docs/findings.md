@@ -19,16 +19,16 @@ The database is not version controlled; it is rebuilt from `sql/schema.sql` and 
 
 ## What was computed, and on what assumptions
 
-For each of 4 missions and each of 31 thrusters that records a specific impulse, the
+For each of 4 missions and each of 32 thrusters that records a specific impulse, the
 pipeline computes exhaust velocity, Tsiolkovsky mass ratio, propellant mass fraction,
 propellant and tank mass, initial mass, thruster count, total thrust and power, and
-power-limited thrusting time. That is 124 rows, of which 98 are feasible.
+power-limited thrusting time. That is 128 rows, of which 101 are feasible.
 
 Four assumptions carry the result. None is a measurement.
 
 Power plant specific mass is taken as 20 kg/kW for nuclear electric and 12 kg/kW for solar
 electric. Thruster plus power processing dry mass, where a source does not give one, is
-taken as 5 kg/kW; this applies to 29 of the 31 rows. Mission payload masses, delta-v and
+taken as 5 kg/kW; this applies to 29 of the 32 rows. Mission payload masses, delta-v and
 trip-time caps are stated project assumptions, with only the 2 MWe and 6 MWe power levels
 traceable to a source [S18].
 
@@ -64,7 +64,7 @@ support. NTP can therefore be compared on mass here, and cannot be compared on t
 
 ## Crewed Mars transfer, nominal
 
-90 t payload, 7000 m/s, 2 MWe, 365-day cap. 30 of 31 candidates are feasible; the only
+90 t payload, 7000 m/s, 2 MWe, 365-day cap. 31 of 32 candidates are feasible; the only
 failure is the NPT30-I2, a 1 mN cubesat thruster that has no business on this mission.
 
 | rank | thruster | type | propellant | initial mass kg | propellant kg | tank kg | days | units |
@@ -95,7 +95,7 @@ lithium MPD thrusters, the least mature hardware in the set.
 
 ## Crewed Mars transfer, fast
 
-90 t payload, 15 000 m/s, 6 MWe, 210-day cap. Only 9 of 31 are feasible, and the pattern of
+90 t payload, 15 000 m/s, 6 MWe, 210-day cap. Only 10 of 32 are feasible, and the pattern of
 failure is the result.
 
 | rank | thruster | type | propellant | initial mass kg | propellant kg | tank kg | days | units |
@@ -113,15 +113,30 @@ on time, not on mass. Power-limited thrusting time scales with the square of exh
 at fixed power, so the high specific impulse that wins the nominal mission is exactly what
 loses the fast one.
 
-The three nuclear thermal rows are feasible here and sit below the table, because once
-tankage is charged they are the three heaviest vehicles in the feasible set: the NASEM
-reference NTP at 1067 t, Pewee at 1431 t and Phoebus-2A at 1696 t, ranking seventh, eighth
-and ninth of nine. Hydrogen is the reason. At 70.85 kg/m3 it carries a 12.0 percent tank
-fraction against xenon's 5.5, and it is combined with mass ratios above 5, so the tank
-compounds against the propellant rather than trimming it. Their feasibility flag means only
-that the rocket equation closes: the comparison has nothing to say about whether any of them
-meets the 210-day requirement, because the model that produces a trip time does not apply to
-them.
+The four nuclear thermal rows are feasible here and sit below the table, because once tankage
+is charged they are the four heaviest vehicles in the feasible set: the NASEM reference NTP
+at 1067 t, the NERVA-derived 25 klbf engine at 1076 t, Pewee at 1431 t and Phoebus-2A at
+1696 t, ranking seventh through tenth of ten. Hydrogen is the reason. At 70.85 kg/m3 it
+carries a 12.0 percent tank fraction against xenon's 5.5, and it is combined with mass ratios
+above 5, so the tank compounds against the propellant rather than trimming it.
+
+Only one of the four carries its own engine. The NERVA-derived row is a complete engine
+design with a thrust-to-weight ratio of 3.50 [S33], giving 3.24 t of engine charged against
+the vehicle; Pewee and Phoebus-2A were reactor tests rather than engines, and the NASEM entry
+is a study reference point, so none of the three has an engine mass to charge and their
+initial masses are optimistic by an unrecorded amount. That the engine-carrying row still
+lands within one percent of the NASEM reference is a statement about scale: 3.24 t of engine
+is small against a 90 t payload.
+
+It is not small against a 500 kg one. On the nominal probe the NERVA-derived engine comes out
+at 22.0 t against 3.0 to 3.8 t for the three rows that omit their engines, a factor of six
+and 22 t of vehicle to move 500 kg of payload. That is the arithmetic behind the warning in
+the sensitivity section that a nuclear thermal engine on a probe is not a design, now visible
+in the results rather than only asserted in prose.
+
+The feasibility flag on any of these rows means only that the rocket equation closes: the
+comparison has nothing to say about whether they meet the 210-day requirement, because the
+model that produces a trip time does not apply to them.
 
 Within the electric survivors, propellant is 44 to 62 percent of the vehicle, against 8 to 17
 percent on the nominal mission. Doubling delta-v and halving the time cap moves the design
@@ -129,8 +144,8 @@ from power-plant-dominated to propellant-dominated.
 
 ## 500 kg deep-space probe
 
-20 kW solar electric, 3650-day cap. Nominal has all 31 candidates feasible; the high-energy
-variant loses three, all of them nuclear thermal and all of them to tankage rather than time;
+20 kW solar electric, 3650-day cap. Nominal has all 32 candidates feasible; the high-energy
+variant loses four, all of them nuclear thermal and all of them to tankage rather than time;
 the structural-floor sweep below explains why.
 
 Nominal, 12 000 m/s:
@@ -225,9 +240,9 @@ tank mass and thrusting time, with the rows that fail their time cap drawn pale.
 
 The Scala and Julia pipelines implement the relations separately rather than sharing code.
 The Julia test suite joins both producers' rows in the `results` table and requires
-agreement to 1e-9 relative. All 124 rows agree on initial mass, propellant mass, tank mass,
-trip time, thruster count and feasibility. 1592 Julia tests and 44 Scala self-tests pass, and
-SQL validation reports no errors over 17 checks.
+agreement to 1e-9 relative. All 128 rows agree on initial mass, propellant mass, tank mass,
+trip time, thruster count and feasibility. 1645 Julia tests and 44 Scala self-tests pass, and
+SQL validation reports no errors over 18 checks.
 
 The Lean development proves the relations the comparison uses, including
 `propellantMassFraction_mem_Ico`, the statement that the propellant mass fraction lies in

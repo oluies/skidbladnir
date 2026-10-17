@@ -449,7 +449,12 @@ function compare_one(mission, thruster; tank_fraction::Real = 0.0)
             ismiss(mission.power_available_W) ? "mission states no available power" :
             "row lacks one of thrust, Isp, power or efficiency"
 
-        inert_mass = inert_mass_with_tank(mission.payload_mass_kg, mr, f_tank)
+        # Charge engine dry mass where the source gives one. ntp_nerva_derived does; the
+        # Rover reactor tests and the NASEM study reference do not, because a reactor test
+        # is not an engine, so those rows stay optimistic by an unrecorded amount.
+        engine_mass = ismiss(thruster.mass_kg) ? 0.0 : thruster.mass_kg
+        base_inert = mission.payload_mass_kg + engine_mass
+        inert_mass = inert_mass_with_tank(base_inert, mr, f_tank)
         if inert_mass === nothing
             return merge(base_row, (
                 notes = @sprintf("%s; tankage diverges at f=%.3f and MR=%.3f", why, f_tank, mr),
@@ -467,7 +472,10 @@ function compare_one(mission, thruster; tank_fraction::Real = 0.0)
             tank_mass_kg = tank_mass,
             feasible = sane,
             notes = @sprintf(
-                "%s; engine dry mass excluded; tank %.0f kg at f=%.3f", why, tank_mass, f_tank
+                "%s; %s; tank %.0f kg at f=%.3f", why,
+                engine_mass > 0 ? @sprintf("engine dry mass %.0f kg", engine_mass) :
+                                  "engine dry mass not recorded and excluded",
+                tank_mass, f_tank
             ),
         ))
     end

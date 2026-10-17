@@ -298,6 +298,32 @@ using DataFrames
         end
 
 
+
+        @testset "nuclear thermal engine dry mass is charged when recorded" begin
+            ntp = thrusters[thrusters.thruster_type .== "nuclear_thermal", :]
+            with_mass = ntp[.!ismissing.(ntp.mass_kg), :]
+            @test nrow(with_mass) >= 1          # ntp_nerva_derived
+            @test any(ismissing, ntp.mass_kg)   # the reactor tests still have none
+
+            m = first(eachrow(missions[missions.mission_id .== "probe500_nominal", :]))
+            f_h2 = tank_mass_fraction(70.85, 1.0)
+            for t in eachrow(with_mass)
+                r = compare_one(m, t; tank_fraction = f_h2)
+                mr = mass_ratio(m.delta_v_m_s, exhaust_velocity(t.isp_s))
+                # Initial mass must reflect payload plus engine, not payload alone.
+                without = inert_mass_with_tank(m.payload_mass_kg, mr, f_h2) * mr
+                @test r.initial_mass_kg > without
+                expected = inert_mass_with_tank(m.payload_mass_kg + t.mass_kg, mr, f_h2) * mr
+                @test isapprox(r.initial_mass_kg, expected, rtol = 1e-9)
+                @test occursin("engine dry mass", r.notes)
+            end
+
+            # A row with no recorded engine mass still says so rather than implying zero.
+            no_mass = first(eachrow(ntp[ismissing.(ntp.mass_kg), :]))
+            @test occursin("not recorded and excluded",
+                           compare_one(m, no_mass; tank_fraction = f_h2).notes)
+        end
+
         @testset "tankage reverses the krypton matched pairs" begin
             # Without a tank model krypton wins on initial mass in both matched pairs.
             # Charging the tank against the vehicle reverses both, which is the result the

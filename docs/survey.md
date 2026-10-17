@@ -194,7 +194,13 @@ and nothing since has matched them in hardware.
 
 Modern programme activity has been start-stop. The NASEM committee's 2021 assessment set the
 reference NTP system at specific impulse of at least 900 s with hydrogen heated to at least 2700 K
-[S18]. NASA design studies in the interim examined engine configurations chosen for affordability and
+[S18]. The engine most studies size against is the NERVA-derived 25 klbf Pewee-class design
+baselined in Mars Design Reference Architecture 5.0: a dual turbopump expander cycle running
+at 2790 K core exit and 1000 psi chamber pressure, 906 s specific impulse, 12.5 kg/s of
+hydrogen, 7.01 m long, and an engine thrust-to-weight ratio of 3.50 [S33]. That ratio is the
+only published route to an engine dry mass for this class; the Rover reactor tests have none,
+because a reactor on a test stand is not an engine. NASA design studies in the interim
+examined engine configurations chosen for affordability and
 for a shortened path to flight rather than for peak performance [S22]. DRACO, the DARPA and NASA
 flight demonstration, was to launch in late 2025 or early 2026
 [S25]. It was cancelled; the FY2026 NASA budget request contained no funding for nuclear thermal or
@@ -487,3 +493,7 @@ presented as settled.
 - `[S32]` Linnell, J. A., and Gallimore, A. D., "Efficiency Analysis of a Hall Thruster
   Operating with Krypton and Xenon", *Journal of Propulsion and Power*, vol. 22, no. 6,
   pp. 1402-1418, 2006.
+- `[S33]` Borowski, S. K., McCurdy, D. R., and Packard, T. W., "Nuclear Thermal Propulsion
+  (NTP): A Proven Growth Technology for Human NEO / Mars Exploration Missions", IEEE
+  Aerospace Conference, NASA Glenn Research Center, NTRS 20120003776, 2012.
+  https://ntrs.nasa.gov/api/citations/20120003776/downloads/20120003776.pdf

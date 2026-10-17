@@ -23,7 +23,7 @@ object Validation:
   val MinimumFlownOrTested: Int = 15
 
   val KnownDerivedFields: Set[String] =
-    Set("thrust_mN", "isp_s", "input_power_W", "efficiency")
+    Set("thrust_mN", "isp_s", "input_power_W", "efficiency", "mass_kg")
 
   val checks: Vector[Check] = Vector(
     Check(
@@ -65,6 +65,17 @@ object Validation:
                  || ' residual=' || round(efficiency_residual, 4) AS detail
           FROM v_thruster_consistency
           WHERE efficiency_abs_residual > $EfficiencyResidualTolerance"""
+    ),
+    Check(
+      "ntp_jet_power",
+      Severity.Error,
+      "a nuclear thermal row's jet power must not exceed its reactor thermal power, and " +
+        "should be a large fraction of it",
+      """SELECT thruster_id || ': jet/reactor=' || round(jet_to_reactor_ratio, 4)
+                 || ' (jet ' || round(jet_power_W / 1e6, 1) || ' MW, reactor '
+                 || round(reactor_thermal_W / 1e6, 1) || ' MW)' AS detail
+          FROM v_ntp_consistency
+          WHERE jet_to_reactor_ratio > 1.0 OR jet_to_reactor_ratio < 0.5"""
     ),
     Check(
       "ntp_power_basis",

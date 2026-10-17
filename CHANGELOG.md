@@ -404,3 +404,37 @@ cross-implementation check, 816 without.
 - The last row of the mission summary table gave its margin as a bare "0.74 to 0.96" while
   the three rows above label the same quantity "times margin". Labelled, and the column
   header now names the quantity as kcrit/8 so the figure does not have to be inferred.
+
+## 2026-10-17
+
+### Nuclear thermal engine dry mass, and a units bug it exposed
+- Found and fixed a 1000x error of my own. Phoebus-2A's thrust was recorded as 930000 mN,
+  that is 930 N, from a source that says 930 kN. Nothing caught it: v_thruster_consistency
+  only covers electrical rows, NTP thrust feeds no calculation, and no document quoted it.
+  Corrected to 930000000 mN.
+- Added v_ntp_consistency and an 18th validation check to close that gap. The nozzle converts
+  reactor thermal power into jet power, so T*g0*Isp/2 can never exceed the reactor thermal
+  power and in practice is a large fraction of it. Phoebus-2A corrected gives 0.916; the
+  erroneous value gives 0.0009. Verified by negative test: reinstating the bad figure in a
+  scratch database makes the check fail with exactly that ratio.
+- Added ntp_nerva_derived, the 25 klbf Pewee-class dual turbopump expander cycle engine
+  baselined in Mars DRA 5.0, from Borowski et al. (new source S33): 906 s, 2790 K core exit,
+  1000 psi, 12.5 kg/s hydrogen, thrust-to-weight 3.50. Its engine dry mass of 3240 kg is
+  derived from that ratio and is the only published route to an engine mass for this class.
+- The comparison now charges engine dry mass in the non-electric branch, as it already did
+  for the tank and power plant. 32 thrusters, 128 rows, 101 feasible.
+
+### What it shows
+- Only one of the four nuclear thermal rows carries an engine. Pewee and Phoebus-2A were
+  reactor tests and the NASEM entry is a study reference point, so none of the three has an
+  engine mass to charge and their initial masses stay optimistic by an unrecorded amount.
+  Their notes now say "engine dry mass not recorded and excluded" rather than implying zero.
+- At Mars scale 3.24 t of engine is small: the engine-carrying row lands within one percent
+  of the NASEM reference. At probe scale it is not. On the nominal probe the NERVA-derived
+  engine comes out at 22.0 t against 3.0 to 3.8 t for the rows that omit their engines, a
+  factor of six, and 22 t of vehicle to move 500 kg of payload. The warning that an NTP
+  engine on a probe is not a design is now visible in the results rather than only asserted.
+- mass_kg joins the set of fields derived_fields may name, since the new row's mass is
+  derived from a published thrust-to-weight rather than quoted directly.
+- Tests: 1645 Julia, 44 Scala. A new test pins that recorded engine mass is charged, that the
+  result matches payload-plus-engine sizing exactly, and that a row without one says so.
