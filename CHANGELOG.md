@@ -387,3 +387,15 @@ cross-implementation check, 816 without.
 - Tests: 1592 Julia, 44 Scala. New tests pin that all three nuclear thermal engines fall
   below the assumed floor on the high-energy probe, and that the best of them misses by a
   small margin rather than a large one.
+
+### Review 2007 corrections
+- The margin column in the new mission summary table read "4 to 7 times" for crewed Mars
+  nominal. The other three rows are kcrit/8 exactly, and that row is 50.5/8 to 58.0/8, so
+  6.3 to 7.3. The "4" matched no quantity in the model. Every row of the column is now
+  kcrit/8, including the high-energy probe at 0.74 to 0.96, which is below one and is
+  precisely why it does not close.
+- README.md still annotated the Verify line with "26 self-tests" against the actual 44. This
+  is the fourth count-drift finding in the session, so rather than re-syncing the number the
+  annotations now describe what the commands check without counting: "assertion-based
+  self-tests" and "SQL range and consistency checks". Precise counts stay in docs/findings.md
+  and this file, where they are verification claims rather than usage notes.

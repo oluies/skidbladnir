@@ -337,10 +337,10 @@ closure margins in the study.
 
 | mission | MR range | closes while kappa < | at the baseline 8 kg/m3 |
 |---|---|---|---|
-| Crewed Mars, nominal | 2.21 to 2.39 | 50.5 to 58.0 | closes, 4 to 7 times margin |
-| 500 kg probe, nominal | 3.90 to 4.45 | 20.0 to 23.9 | closes, 2.5 to 3 times margin |
+| Crewed Mars, nominal | 2.21 to 2.39 | 50.5 to 58.0 | closes, 6.3 to 7.3 times margin |
+| 500 kg probe, nominal | 3.90 to 4.45 | 20.0 to 23.9 | closes, 2.5 to 3.0 times margin |
 | Crewed Mars, fast | 5.47 to 6.46 | 12.4 to 15.3 | closes, 1.6 to 1.9 times margin |
-| 500 kg probe, high energy | 9.64 to 12.03 | 5.9 to 7.7 | does not close |
+| 500 kg probe, high energy | 9.64 to 12.03 | 5.9 to 7.7 | does not close, 0.74 to 0.96 |
 
 The ordering is monotone in mass ratio, which is `tankCloses_bound_antitone` restated in
 kilograms: every increase in delta-v tightens the tolerable tank fraction, and hydrogen's

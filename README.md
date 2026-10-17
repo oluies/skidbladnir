@@ -35,8 +35,8 @@ DuckDB JDBC driver and Mathlib.
 
     # 2. Scala: validate and run the comparison
     cd scala
-    mill pipeline.runMain propulsion.Verify          # 26 self-tests
-    mill pipeline.runMain propulsion.Main validate   # 17 SQL checks
+    mill pipeline.runMain propulsion.Verify          # assertion-based self-tests
+    mill pipeline.runMain propulsion.Main validate   # SQL range and consistency checks
     mill pipeline.runMain propulsion.Main compare    # writes producer 'scala'
     mill pipeline.runMain propulsion.Main report     # ranked table
     cd ..
