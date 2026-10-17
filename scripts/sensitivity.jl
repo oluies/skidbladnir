@@ -1,10 +1,11 @@
 #!/usr/bin/env julia
 #
 # Sensitivity of the ranking to the four assumptions the literature does not pin down:
-# power plant specific mass (alpha), thruster plus power-processing dry mass, and the tank
-# wall's effective specific strength, and its structural floor kappa. The first three are
-# swept against the electric candidates; kappa is swept against the nuclear thermal rows,
-# where it carries 94 percent of the tank fraction.
+# power plant specific mass (alpha), thruster plus power-processing dry mass, the tank
+# wall's effective specific strength, and its structural floor kappa. The first three move
+# by roughly a factor of two in each direction and are swept against the electric
+# candidates; kappa runs from half to four times its assumed value and is swept against the
+# nuclear thermal rows, where it carries 94 percent of the tank fraction.
 #
 #     julia --project=julia/Propulsion scripts/sensitivity.jl
 #

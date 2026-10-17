@@ -246,11 +246,12 @@ in `julia/Propulsion/test/runtests.jl` pins both facts so the gap cannot close s
 
 ## Sensitivity
 
-`scripts/sensitivity.jl` recomputes the rankings with the four unmeasured assumptions varied
-by a factor of two in each direction: power plant specific mass, thruster dry mass, the tank
-wall's effective specific strength, and the tank structural floor. The first three are swept
-against the electric candidates; the floor is swept against the nuclear thermal rows, where it
-carries 94 percent of the tank fraction.
+`scripts/sensitivity.jl` recomputes the rankings with the four unmeasured assumptions varied:
+power plant specific mass, thruster dry mass, the tank wall's effective specific strength,
+and the tank structural floor. The first three move by roughly a factor of two in each
+direction and are swept against the electric candidates. The floor runs from half to four
+times its assumed value and is swept against the nuclear thermal rows, where it carries 94
+percent of the tank fraction.
 
 For the crewed Mars nominal mission, halving power plant specific mass from 20 to 10 kg/kW
 drops HiPEP's initial mass from 153 t to 131 t. Doubling it to 40 kg/kW removes HiPEP from

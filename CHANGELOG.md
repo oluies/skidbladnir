@@ -354,3 +354,11 @@ cross-implementation check, 816 without.
   electric row would have been printed under the nuclear thermal heading and sized without
   its power plant. Now filtered on thruster_type.
 - Removed a duplicated comment line in the new testset.
+
+### Review 1994 corrections
+- The sensitivity intro said all four assumptions were "varied by a factor of two in each
+  direction", but the structural floor is swept from half to four times its value, as the
+  document's own table says two paragraphs later. The qualifier is now scoped: the three
+  electric knobs move by roughly a factor of two, the floor from half to four times.
+- The script header had a stray conjunction left from appending a fourth item to a
+  three-item list.
