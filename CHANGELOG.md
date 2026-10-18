@@ -438,3 +438,29 @@ cross-implementation check, 816 without.
   derived from a published thrust-to-weight rather than quoted directly.
 - Tests: 1645 Julia, 44 Scala. A new test pins that recorded engine mass is charged, that the
   result matches payload-plus-engine sizing exactly, and that a row without one says so.
+
+### Review 2019 corrections
+- The worst of these was a split model, not stale prose. The results path charges engine dry
+  mass; ntp_tank_sensitivity still sized on payload alone, so ntp_nerva_derived came out at
+  22.0 t in the results table and 2.9 t in the sweep, and both numbers were published in
+  docs/findings.md a few sections apart. The sweep now charges engine mass the way
+  compare_one does and the two agree exactly at 22020 kg. Its printed caveat, which still
+  claimed the model excludes engine dry mass, now says which rows carry an engine and which
+  do not.
+- The structural-floor sweep section had not been updated for the fourth nuclear thermal
+  row, which the script had already started printing. Both engine tables gain the
+  NERVA-derived row, the MR and kcrit ranges widen to 2.20-2.39 / 3.86-4.45 / 5.41-6.46 /
+  9.50-12.03 and 50.5-58.6 / 20.0-24.2 / 12.4-15.5 / 5.9-7.8, and the document no longer says
+  "three" in one place and "four" in another about the same set.
+- On the high-energy probe the best engine is now the NERVA-derived row at mass ratio 9.50,
+  tolerating 7.80 kg/m3 and missing the assumed floor by 2.4 percent rather than the NASEM
+  reference missing by 4. The probe-nominal increase at kappa=16 is 97 to 199 percent.
+- The new jet-power check could not see ntp_nerva_derived, which records no reactor power, so
+  the thrust its 3240 kg mass is derived from was validated by nothing. That is the same gap
+  the previous commit set out to close. Added v_ntp_engine_mass and a 19th check requiring the
+  implied thrust-to-weight to lie between 1 and 10; the row gives exactly 3.500, matching its
+  quoted ratio, and a negative test with the mass set to 324 kg fails the check at 34.999.
+- Stale counts: docs/findings.md now says 3 of 32 thrusters record a dry mass, and the two
+  code comments that counted rows are count-free, as README.md already was.
+- The sweep is a script and no test covers it, which is why the split model went unnoticed.
+  Worth knowing when reading its output.

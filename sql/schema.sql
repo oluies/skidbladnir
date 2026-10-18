@@ -192,3 +192,23 @@ WHERE thruster_type = 'nuclear_thermal'
   AND thrust_mN IS NOT NULL
   AND isp_s IS NOT NULL
   AND input_power_W IS NOT NULL;
+
+-- Engine dry mass of a nuclear thermal row against its thrust.
+--
+-- ntp_nerva_derived's mass is derived from a published thrust-to-weight ratio, so the mass
+-- and the thrust are not independent: editing either alone silently breaks the derivation.
+-- v_ntp_consistency cannot catch that, because it needs a reactor thermal power the row does
+-- not record. This recovers the implied ratio so it can be range-checked. Flown and designed
+-- NTP engines span roughly 1.4 (NERVA XE-Prime, a heavy ground-test unit) to about 5 for
+-- modern flight designs.
+CREATE OR REPLACE VIEW v_ntp_engine_mass AS
+SELECT
+    thruster_id,
+    name,
+    thrust_mN / 1000.0                                      AS thrust_N,
+    mass_kg,
+    (thrust_mN / 1000.0) / (mass_kg * 9.80665)              AS implied_thrust_to_weight
+FROM thrusters
+WHERE thruster_type = 'nuclear_thermal'
+  AND thrust_mN IS NOT NULL
+  AND mass_kg IS NOT NULL;

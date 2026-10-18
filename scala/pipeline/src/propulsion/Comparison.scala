@@ -23,7 +23,7 @@ object Comparison:
   val DefaultAlphaKgPerKW: Double = 20.0
 
   /** Fallback for thruster plus power processing dry mass when the source does not give one.
-    * 24 of the 26 rows in the dataset need this.
+    * Most rows in the dataset need it; the validation run reports how many.
     */
   val ThrusterSpecificMassKgPerKW: Double = 5.0
 

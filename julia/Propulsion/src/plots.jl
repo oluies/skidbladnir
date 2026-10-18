@@ -78,7 +78,7 @@ Write the comparison figures and return the paths written.
 
 Three quantities are plotted per mission: trip time, initial mass and propellant mass.
 Only the best `topn` candidates per mission appear, ranked by the quantity being plotted,
-because 31 bars on one panel is unreadable and the tail is uninformative.
+because a full panel of bars is unreadable and the tail is uninformative.
 
 Nuclear thermal rows appear in the mass plots and are absent from the trip-time plot,
 because the power-limited model that produces a trip time does not apply to them. That

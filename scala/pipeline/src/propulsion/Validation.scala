@@ -78,6 +78,17 @@ object Validation:
           WHERE jet_to_reactor_ratio > 1.0 OR jet_to_reactor_ratio < 0.5"""
     ),
     Check(
+      "ntp_engine_thrust_to_weight",
+      Severity.Error,
+      "a nuclear thermal engine's recorded mass and thrust must imply a plausible " +
+        "thrust-to-weight ratio, between 1 and 10",
+      """SELECT thruster_id || ': implied T/W=' || round(implied_thrust_to_weight, 3)
+                 || ' from ' || round(thrust_N / 1000.0, 1) || ' kN and '
+                 || mass_kg || ' kg' AS detail
+          FROM v_ntp_engine_mass
+          WHERE implied_thrust_to_weight < 1.0 OR implied_thrust_to_weight > 10.0"""
+    ),
+    Check(
       "ntp_power_basis",
       Severity.Error,
       "nuclear thermal rows must quote reactor thermal power, never electrical input",

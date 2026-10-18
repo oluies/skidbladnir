@@ -242,7 +242,7 @@ The Scala and Julia pipelines implement the relations separately rather than sha
 The Julia test suite joins both producers' rows in the `results` table and requires
 agreement to 1e-9 relative. All 128 rows agree on initial mass, propellant mass, tank mass,
 trip time, thruster count and feasibility. 1645 Julia tests and 44 Scala self-tests pass, and
-SQL validation reports no errors over 18 checks.
+SQL validation reports no errors over 19 checks.
 
 The Lean development proves the relations the comparison uses, including
 `propellantMassFraction_mem_Ico`, the statement that the propellant mass fraction lies in
@@ -309,26 +309,28 @@ hydrogen's is a thin-walled box around a very large volume, and 94 percent of it
 from the structural and insulation floor. Changing the wall strength barely moves a nuclear
 thermal vehicle. Changing the floor decides whether it exists.
 
-`scripts/sensitivity.jl` sweeps the floor from 4 to 32 kg/m3 against the three nuclear
+`scripts/sensitivity.jl` sweeps the floor from 4 to 32 kg/m3 against the four nuclear
 thermal rows. The two crewed missions behave completely differently.
 
 On the nominal mission, at delta-v 7000 m/s and mass ratios near 2.2 to 2.4, nuclear thermal
 is insensitive. Every engine still closes at 32 kg/m3, four times the assumed value, and the
-closure limits sit at 50 to 58 kg/m3:
+closure limits sit at 51 to 59 kg/m3:
 
 | engine | MR | kappa = 4 | kappa = 8 | kappa = 16 | kappa = 32 | closes while kappa < |
 |---|---|---|---|---|---|---|
 | NASEM reference NTP | 2.210 | 216 t | 233 t | 277 t | 448 t | 58.0 |
+| NERVA-derived 25 klbf | 2.199 | 222 t | 240 t | 285 t | 456 t | 58.6 |
 | Pewee | 2.327 | 229 t | 249 t | 303 t | 536 t | 52.8 |
 | Phoebus-2A | 2.388 | 236 t | 258 t | 318 t | 593 t | 50.5 |
 
-On the fast mission, at 15 000 m/s and mass ratios of 5.5 to 6.5, the same engines are
+On the fast mission, at 15 000 m/s and mass ratios of 5.4 to 6.5, the same engines are
 fragile. Doubling the floor to 16 kg/m3 does not make them heavier; it makes them
 nonexistent.
 
 | engine | MR | kappa = 4 | kappa = 8 | kappa = 16 | closes while kappa < |
 |---|---|---|---|---|---|
 | NASEM reference NTP | 5.471 | 690 t | 1067 t | does not close | 15.3 |
+| NERVA-derived 25 klbf | 5.410 | 703 t | 1076 t | does not close | 15.5 |
 | Pewee | 6.111 | 817 t | 1431 t | does not close | 13.3 |
 | Phoebus-2A | 6.458 | 893 t | 1696 t | does not close | 12.4 |
 
@@ -345,32 +347,34 @@ close to the second.
 
 The same sweep run against the two probe missions completes the picture, and it explains a
 result reported earlier in this document. A nuclear thermal engine pushing a 500 kg payload
-is not a design: the model excludes engine dry mass, and a Rover-class reactor masses tonnes
-against that payload, so these rows say something about the tank model rather than about a
-vehicle anyone would build. What they say is worth having, because they are the tightest
-closure margins in the study.
+is not a design, and the engine-carrying row is the proof: 3.2 t of engine against 0.5 t of
+payload, giving 22.0 t of vehicle where the three rows that record no engine mass give 3.0 to
+3.8 t. These rows say something about the tank model rather than about a vehicle anyone would
+build. What they say is worth having, because they are the tightest closure margins in the
+study.
 
 | mission | MR range | closes while kappa < | margin at the baseline 8 kg/m3, kcrit/8 |
 |---|---|---|---|
-| Crewed Mars, nominal | 2.21 to 2.39 | 50.5 to 58.0 | closes, 6.3 to 7.3 times margin |
-| 500 kg probe, nominal | 3.90 to 4.45 | 20.0 to 23.9 | closes, 2.5 to 3.0 times margin |
-| Crewed Mars, fast | 5.47 to 6.46 | 12.4 to 15.3 | closes, 1.6 to 1.9 times margin |
-| 500 kg probe, high energy | 9.64 to 12.03 | 5.9 to 7.7 | does not close, 0.74 to 0.96 times margin |
+| Crewed Mars, nominal | 2.20 to 2.39 | 50.5 to 58.6 | closes, 6.3 to 7.3 times margin |
+| 500 kg probe, nominal | 3.86 to 4.45 | 20.0 to 24.2 | closes, 2.5 to 3.0 times margin |
+| Crewed Mars, fast | 5.41 to 6.46 | 12.4 to 15.5 | closes, 1.6 to 1.9 times margin |
+| 500 kg probe, high energy | 9.50 to 12.03 | 5.9 to 7.8 | does not close, 0.74 to 0.98 times margin |
 
 The ordering is monotone in mass ratio, which is `tankCloses_bound_antitone` restated in
 kilograms: every increase in delta-v tightens the tolerable tank fraction, and hydrogen's
 0.1204 crosses the line somewhere between the fast Mars mission and the high-energy probe.
 
-The high-energy probe is where the model is at its least trustworthy. The best of the three
-engines, the NASEM reference at mass ratio 9.64, tolerates a floor up to 7.67 kg/m3 against
-the 8.0 assumed. It fails by four percent. Those are the three infeasible rows on that
+The high-energy probe is where the model is at its least trustworthy. The best of the four
+engines, the NERVA-derived design at mass ratio 9.50, tolerates a floor up to 7.80 kg/m3
+against the 8.0 assumed. It fails by 2.4 percent. Those are the four infeasible rows on that
 mission noted earlier: they are not a physical conclusion, they are a chosen constant landing
-just the wrong side of a threshold. At 4 kg/m3 all three close, the NASEM reference at 10.8 t
-on a 500 kg payload.
+just the wrong side of a threshold. At 4 kg/m3 all four close, the NASEM reference at 10.8 t
+and the engine-carrying NERVA row at 77.8 t, on a 500 kg payload.
 
-On the probe's nominal mission the margin is real but not large. All three engines close at
-the baseline, at 3.0 to 3.8 t, and all three stop closing by 32 kg/m3; doubling the floor to
-16 raises initial mass by 101 to 199 percent.
+On the probe's nominal mission the margin is real but not large. All four engines close at
+the baseline, at 3.0 to 3.8 t for the three without an engine mass and 22.0 t for the one
+with, and all four stop closing by 32 kg/m3; doubling the floor to 16 raises initial mass by
+97 to 199 percent.
 
 What does not change under any of this is the ranking. Nuclear thermal is heavier than the
 leading electric candidate on all four missions across the whole range swept, including at the
@@ -396,7 +400,7 @@ crewed NEP trip time, including the ones here, rests on an assumed value. A grou
 demonstration at even 100 kWe with measured mass, including radiators and power
 conditioning, would settle more about crewed Mars propulsion than any thruster programme.
 
-**Thruster and power-processing dry mass.** The dataset records a dry mass for 2 of 31
+**Thruster and power-processing dry mass.** The dataset records a dry mass for 3 of 32
 thrusters. The other 29 use an assumed 5 kg/kW, and the validation run emits 29
 `dry_mass_unknown` warnings to make that visible. The gap is in the literature rather than
 in the transcription: performance papers report thrust, specific impulse, power and
