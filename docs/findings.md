@@ -241,7 +241,7 @@ tank mass and thrusting time, with the rows that fail their time cap drawn pale.
 The Scala and Julia pipelines implement the relations separately rather than sharing code.
 The Julia test suite joins both producers' rows in the `results` table and requires
 agreement to 1e-9 relative. All 128 rows agree on initial mass, propellant mass, tank mass,
-trip time, thruster count and feasibility. 1645 Julia tests and 44 Scala self-tests pass, and
+trip time, thruster count and feasibility. 1648 Julia tests and 43 Scala self-tests pass, and
 SQL validation reports no errors over 19 checks.
 
 The Lean development proves the relations the comparison uses, including
@@ -314,7 +314,7 @@ thermal rows. The two crewed missions behave completely differently.
 
 On the nominal mission, at delta-v 7000 m/s and mass ratios near 2.2 to 2.4, nuclear thermal
 is insensitive. Every engine still closes at 32 kg/m3, four times the assumed value, and the
-closure limits sit at 51 to 59 kg/m3:
+closure limits sit at 50 to 59 kg/m3:
 
 | engine | MR | kappa = 4 | kappa = 8 | kappa = 16 | kappa = 32 | closes while kappa < |
 |---|---|---|---|---|---|---|

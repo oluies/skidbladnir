@@ -464,3 +464,21 @@ cross-implementation check, 816 without.
   code comments that counted rows are count-free, as README.md already was.
 - The sweep is a script and no test covers it, which is why the split model went unnoticed.
   Worth knowing when reading its output.
+
+### Review 2025 corrections
+- The sweep no longer re-derives compare_one's sizing. It calls compare_one and prints the
+  initial_mass_kg and tank_mass_kg it returns, so the sweep and the results table are the
+  same calculation by construction rather than two copies kept in step by assertion. That
+  duplication is what produced the 22.0 t against 2.9 t split the previous review caught,
+  and the printed claim that the two match is now structural.
+- Both test suites still pinned the superseded version of the claim: they iterated the Isp
+  literals 900, 845 and 820, omitting the 906 s row that is in fact the tightest of the four
+  and the one the published figure now quotes. Changing that row's Isp would have staled the
+  document with every test green. Both suites now derive the engine list from the nuclear
+  thermal rows in the dataset, assert that every one of them falls below the assumed floor on
+  the high-energy probe, and check the best margin without naming which engine that is, so a
+  fifth row cannot slip past and the test does not need editing when the ordering changes.
+- The nominal-mission prose said closure limits sit at 51 to 59 kg/m3 while the table three
+  lines below gives 50.5 as the lowest. Corrected to 50 to 59.
+- Counts: 1648 Julia, 43 Scala. The Scala total falls by one because two hardcoded checks
+  were replaced by a single dataset-driven one.

@@ -112,7 +112,8 @@ function ntp_tank_sensitivity(missions, thrusters, propellants)
             kappa0, kappa0 / rho, 100 * (kappa0 / rho) / f0)
     println("\nThe floor dominates, so kappa rather than the wall strength decides this case.")
     println("""
-Sizing matches the results table: payload plus engine dry mass where the source records one.
+Sized through compare_one, the same function the results table uses, so the two agree by
+construction. It charges payload plus engine dry mass where the source records one.
 Only ntp_nerva_derived does; Pewee and Phoebus-2A were reactor tests and the NASEM entry is a
 study reference point, so those three carry no engine and their masses are optimistic by an
 unrecorded amount.
@@ -133,12 +134,13 @@ are included because they are the tightest closure margins in the study.""")
             mr = mass_ratio(mission.delta_v_m_s, ve)
             fmax = max_tank_fraction(mr)
             kcrit = critical_structural_floor(rho, p_bar, mr)
-            # Charge engine dry mass where recorded, as compare_one does, so the sweep and
-            # the results table size the same vehicle.
-            base_inert = mission.payload_mass_kg + (ismiss(t.mass_kg) ? 0.0 : t.mass_kg)
-            # Baseline for the comparison column, computed once per engine.
-            inert0 = inert_mass_with_tank(base_inert, mr, f0)
-            m0_base = inert0 === nothing ? nothing : inert0 * mr
+            # Size through compare_one rather than re-deriving its arithmetic. The results
+            # table and this sweep are then the same calculation by construction instead of
+            # by assertion, which is how the two drifted apart in the first place.
+            sized(f) = compare_one(mission, t; tank_fraction = f)
+            r0 = sized(f0)
+            m0_base = (r0 === nothing || ismissing(r0.initial_mass_kg)) ? nothing :
+                      r0.initial_mass_kg
             closes0 = m0_base === nothing ? "does not close at the baseline floor" :
                       @sprintf("%.0f kg at the baseline floor", m0_base)
             @printf("\n  %-22s Isp %4.0f s  MR %6.3f   closes while f < %.4f (kappa < %.2f kg/m3)\n",
@@ -146,16 +148,16 @@ are included because they are the tightest closure margins in the study.""")
             @printf("                         %s\n", closes0)
             for kappa in (kappa0 / 2, kappa0, kappa0 * 2, kappa0 * 4)
                 f = tank_fraction_at(rho, p_bar, kappa)
-                inert = inert_mass_with_tank(base_inert, mr, f)
-                if inert === nothing
+                r = sized(f)
+                if r === nothing || ismissing(r.initial_mass_kg)
                     @printf("     kappa %5.1f  f %.4f   does not close\n", kappa, f)
                 elseif m0_base === nothing
                     @printf("     kappa %5.1f  f %.4f   m0 %10.0f kg   tank %9.0f kg        -\n",
-                            kappa, f, inert * mr, f * inert * (mr - 1))
+                            kappa, f, r.initial_mass_kg, r.tank_mass_kg)
                 else
-                    m0 = inert * mr
                     @printf("     kappa %5.1f  f %.4f   m0 %10.0f kg   tank %9.0f kg   %+6.1f%% vs kappa=%.0f\n",
-                            kappa, f, m0, f * inert * (mr - 1), 100 * m0 / m0_base - 100, kappa0)
+                            kappa, f, r.initial_mass_kg, r.tank_mass_kg,
+                            100 * r.initial_mass_kg / m0_base - 100, kappa0)
                 end
             end
         end

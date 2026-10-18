@@ -189,20 +189,6 @@ using DataFrames
         kcrit_fast = critical_structural_floor(70.85, 1.0, 6.458)
         @test TANK_STRUCTURAL_FLOOR_KG_PER_M3 < kcrit_fast < 2 * TANK_STRUCTURAL_FLOOR_KG_PER_M3
 
-        # The high-energy probe is the tightest case in the study and sits the wrong side of
-        # the line: at mass ratios near 9.6 to 12 the tolerable floor falls below the 8 kg/m3
-        # assumed, so the nuclear thermal rows do not close there at all. The margin is four
-        # percent for the best of the three, which is why those rows are a statement about
-        # the assumption rather than a physical conclusion.
-        for isp in (900.0, 845.0, 820.0)
-            mr = mass_ratio(20000.0, exhaust_velocity(isp))
-            @test critical_structural_floor(70.85, 1.0, mr) < TANK_STRUCTURAL_FLOOR_KG_PER_M3
-            @test inert_mass_with_tank(500.0, mr, tank_mass_fraction(70.85, 1.0)) === nothing
-        end
-        # The best engine misses by a small margin rather than a large one.
-        mr_best = mass_ratio(20000.0, exhaust_velocity(900.0))
-        @test critical_structural_floor(70.85, 1.0, mr_best) >
-              0.9 * TANK_STRUCTURAL_FLOOR_KG_PER_M3
     end
 
     con = connect_db()
@@ -298,6 +284,31 @@ using DataFrames
         end
 
 
+
+
+        @testset "high-energy probe: every nuclear thermal row falls below the floor" begin
+            # The tightest case in the study, driven from the dataset rather than a literal
+            # list, so a new nuclear thermal row cannot slip past this check.
+            ntp = thrusters[(thrusters.thruster_type .== "nuclear_thermal") .&
+                            .!ismissing.(thrusters.isp_s), :]
+            @test nrow(ntp) >= 4
+            f_h2 = tank_mass_fraction(70.85, 1.0)
+            m = first(eachrow(missions[missions.mission_id .== "probe500_aggressive", :]))
+
+            margins = Float64[]
+            for t in eachrow(ntp)
+                mr = mass_ratio(m.delta_v_m_s, exhaust_velocity(t.isp_s))
+                kcrit = critical_structural_floor(70.85, 1.0, mr)
+                @test kcrit < TANK_STRUCTURAL_FLOOR_KG_PER_M3
+                @test ismissing(compare_one(m, t; tank_fraction = f_h2).initial_mass_kg)
+                push!(margins, kcrit / TANK_STRUCTURAL_FLOOR_KG_PER_M3)
+            end
+
+            # The best of them misses by a small margin rather than a large one, which is
+            # why these rows are a statement about the assumption and not a conclusion.
+            # Whichever row that is, the document quotes its figure.
+            @test 0.9 < maximum(margins) < 1.0
+        end
 
         @testset "nuclear thermal engine dry mass is charged when recorded" begin
             ntp = thrusters[thrusters.thruster_type .== "nuclear_thermal", :]
