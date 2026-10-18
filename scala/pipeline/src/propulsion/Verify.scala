@@ -268,7 +268,8 @@ object Verify:
 
 
       // The tightest case in the study, driven from the dataset rather than a literal Isp
-      // list so a new nuclear thermal row cannot slip past. Mirrors the Julia testset.
+      // list so a new nuclear thermal row cannot slip past. Mirrors the Julia testset,
+      // including routing closure through the comparison rather than Physics directly.
       check("high-energy probe: every nuclear thermal row falls below the assumed floor") {
         val ntp = thrusters.filter(t =>
           t.thrusterType == ThrusterType.NuclearThermal && t.ispS.isDefined)
@@ -277,8 +278,12 @@ object Verify:
         val margins = ntp.map { t =>
           val mr = Physics.massRatio(mission.deltaVMS, Physics.exhaustVelocity(t.ispS.get))
           val kcrit = Physics.criticalStructuralFloor(70.85, 1.0, mr)
-          val closes = Physics.inertMassWithTank(mission.payloadMassKg + t.massKg.getOrElse(0.0),
-                                                 mr, fH2).isDefined
+          // Through Comparison.compare, not Physics directly, so this exercises the same
+          // path the results table takes. inertMassWithTank's base-mass argument cannot
+          // affect whether it returns None, so testing it here would prove nothing about
+          // the pipeline propagating tankage divergence into initialMassKg.
+          val closes =
+            Comparison.compare(mission, t, "verify", "scala", fH2).get.initialMassKg.isDefined
           (kcrit, closes)
         }
         ntp.size >= 4 &&

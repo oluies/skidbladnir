@@ -482,3 +482,13 @@ cross-implementation check, 816 without.
   lines below gives 50.5 as the lowest. Corrected to 50 to 59.
 - Counts: 1648 Julia, 43 Scala. The Scala total falls by one because two hardcoded checks
   were replaced by a single dataset-driven one.
+
+### Review 2037 correction
+- The new Scala probe check claimed to mirror the Julia one but did not. Julia asserts
+  through compare_one, exercising the comparison; Scala recomputed closure from
+  Physics.inertMassWithTank directly. That helper decides None purely on
+  1 - f*(mr-1) <= 0, so the payload-plus-engine base it was passed could not affect the
+  result: dead weight that read as though engine mass mattered to closure. The coverage was
+  one-sided, since a regression in the comparison propagating tankage divergence into
+  initialMassKg would have failed the Julia suite and passed the Scala one. The Scala check
+  now goes through Comparison.compare, the same path the results table takes.
