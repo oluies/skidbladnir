@@ -385,7 +385,9 @@ against 1.1 t on the high-energy probe. The sensitivity moves nuclear thermal be
 which this comparison does not evaluate for it.
 
 Figures are in `docs/figures`: `trip_time.png`, `initial_mass.png`, `propellant_mass.png`,
-`isp_vs_trip_time.png` and `krypton_vs_xenon.png`.
+`isp_vs_trip_time.png`, `krypton_vs_xenon.png` and `ntp_tank_floor.png`. The last plots the
+closure limit against mass ratio with hydrogen's own fraction on it, so the crossing at mass
+ratio 9.30 that decides the nuclear thermal rows is visible rather than tabulated.
 
 ## The three unknowns that would most change these results
 

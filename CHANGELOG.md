@@ -492,3 +492,20 @@ cross-implementation check, 816 without.
   one-sided, since a regression in the comparison propagating tankage divergence into
   initialMassKg would have failed the Julia suite and passed the Scala one. The Scala check
   now goes through Comparison.compare, the same path the results table takes.
+
+## 2026-10-19
+
+### A figure for the closure limit, and a figures section in the README
+- Added docs/figures/ntp_tank_floor.png. A vehicle closes only while its tank fraction stays
+  below 1/(MR-1), and liquid hydrogen's fraction is pinned near 0.120 by its storage density,
+  so the mission's mass ratio alone decides whether a nuclear thermal vehicle exists. The two
+  lines cross at mass ratio 9.30. The three missions below that all close; the high-energy
+  probe at 9.50 to 12.03 does not, which is the whole of why its nuclear thermal rows are
+  infeasible. The right panel repeats it in the structural-floor units the sweep varies,
+  against the assumed 8 kg/m3.
+- This was the most consequential result in the study with no picture: it lived only in
+  tables in findings.md and in script output.
+- README gains a Figures section carrying that plot and the krypton matched-pair plot with
+  what each shows, and naming the other four. GitHub renders them from the repository, so
+  the headline results are visible without running anything.
+- Figure count is now 6; findings.md's figure list updated to match.

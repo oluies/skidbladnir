@@ -19,6 +19,45 @@ results and what they rest on.
     lean/               Lean 4 and Mathlib formalisation of the relations used
     scripts/            pipeline and sensitivity entry points
 
+## Figures
+
+Produced by `scripts/run_julia_pipeline.jl` from the results table, and regenerated
+whenever the model changes.
+
+### Why nuclear thermal is the most assumption-sensitive case
+
+![Tank structural floor against the closure limit](docs/figures/ntp_tank_floor.png)
+
+A vehicle closes only while its tank fraction stays below `1/(MR - 1)`, so the tolerable
+fraction collapses as delta-v rises. Liquid hydrogen's fraction is pinned near 0.120 by its
+storage density, which leaves the mission's mass ratio to decide whether a nuclear thermal
+vehicle exists at all. The two lines cross at a mass ratio of 9.30: every engine to the left
+closes, every engine to the right does not. The high-energy probe sits just past the
+crossing, which is why its nuclear thermal rows are infeasible — a chosen constant landing
+on the wrong side of a threshold rather than a physical conclusion. The right panel says the
+same thing in the structural-floor units the sensitivity sweep varies, against the 8 kg/m3
+the comparison assumes.
+
+### Krypton against xenon on matched hardware
+
+![Krypton against xenon](docs/figures/krypton_vs_xenon.png)
+
+Three measured krypton operating points against the xenon they are set against, over three
+missions, with rows that fail their time cap drawn pale. Xenon is lighter in every initial
+mass panel on the left, krypton's tank is about three times larger in every tank panel in the
+middle, and krypton is slower in every time panel on the right. The middle column is the
+mechanism: krypton genuinely carries less propellant, and its tank more than consumes the
+saving. Without a tank model krypton won all four pairings, which is what `docs/findings.md`
+had reported before tankage was charged.
+
+### The rest
+
+    initial_mass.png       best candidates per mission, coloured by thruster type
+    propellant_mass.png    the same ranking on propellant mass
+    trip_time.png          the same on thrusting time; nuclear thermal is absent by
+                           construction, since the power-limited model does not evaluate it
+    isp_vs_trip_time.png   the central trade, specific impulse against thrusting time
+
 ## Languages
 
 Julia for numerical models and plotting. Scala 3 with Mill for ingestion, validation and the

@@ -55,7 +55,8 @@ export g0,
     run_comparison,
     write_results!,
     make_plots,
-    make_krypton_plot
+    make_krypton_plot,
+    make_ntp_floor_plot
 
 # ---------------------------------------------------------------- constants
 

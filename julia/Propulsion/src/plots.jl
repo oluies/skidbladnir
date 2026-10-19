@@ -161,6 +161,7 @@ function make_plots(con, outdir::AbstractString;
     push!(written, path)
 
     push!(written, make_krypton_plot(con, outdir; producer = producer))
+    push!(written, make_ntp_floor_plot(con, outdir))
 
     written
 end
@@ -220,6 +221,94 @@ function make_krypton_plot(con, outdir::AbstractString; producer::AbstractString
     p = plot(panels...; layout = (3, 3), size = (2000, 1250),
              left_margin = 34Plots.mm, bottom_margin = 7Plots.mm, top_margin = 5Plots.mm)
     path = joinpath(outdir, "krypton_vs_xenon.png")
+    savefig(p, path)
+    path
+end
+
+"""
+    make_ntp_floor_plot(con, outdir) -> String
+
+The tank structural floor against the closure limit, for the nuclear thermal rows.
+
+A vehicle closes while its tank fraction stays below `1/(MR - 1)`, so the tolerable fraction
+collapses as delta-v rises. Liquid hydrogen's fraction is fixed at about 0.120 by its storage
+density, which means the mission's mass ratio alone decides whether a nuclear thermal vehicle
+exists. The left panel draws that crossing directly; the right panel is the same statement in
+the structural-floor units the sweep uses, against the 8 kg/m3 the comparison assumes.
+
+This is the most assumption-sensitive result in the study, so it is worth seeing rather than
+reading off a table.
+"""
+function make_ntp_floor_plot(con, outdir::AbstractString)
+    ENV["GKSwstype"] = "100"
+    gr()
+    mkpath(outdir)
+
+    h2 = first(eachrow(query_db(con, """
+        SELECT storage_density_kg_m3 AS rho, storage_pressure_bar AS p
+        FROM propellants WHERE propellant = 'hydrogen'
+    """)))
+    rho, p_bar = h2.rho, h2.p
+    f_h2 = tank_mass_fraction(rho, p_bar)
+    kappa0 = TANK_STRUCTURAL_FLOOR_KG_PER_M3
+
+    ntp = query_db(con, """
+        SELECT name, isp_s FROM thrusters
+        WHERE thruster_type = 'nuclear_thermal' AND isp_s IS NOT NULL
+        ORDER BY isp_s DESC
+    """)
+    missions = query_db(con, """
+        SELECT name, delta_v_m_s FROM missions ORDER BY delta_v_m_s
+    """)
+
+    # Mass ratio where hydrogen's own fraction meets the closure limit.
+    mr_cross = 1 + 1 / f_h2
+    mrs = range(1.5, 13.0, length = 500)
+
+    pal = [:steelblue, :darkorange, :seagreen, :firebrick]
+    shapes = [:circle, :diamond, :utriangle, :square]
+
+    # (a) closure limit against mass ratio, in tank-fraction units.
+    pa = plot(mrs, [max_tank_fraction(m) for m in mrs];
+              label = "closure limit, 1/(MR-1)", color = :black, lw = 2,
+              xlabel = "mass ratio", ylabel = "tank fraction",
+              title = "Hydrogen meets the closure limit at MR 9.30", titlefontsize = 10,
+              ylims = (0, 1.0), legend = :topright, legendfontsize = 7,
+              guidefontsize = 8, tickfontsize = 7)
+    hline!(pa, [f_h2]; label = @sprintf("liquid hydrogen, f = %.3f", f_h2),
+           color = :grey40, ls = :dash, lw = 2)
+    vline!(pa, [mr_cross]; label = @sprintf("crossing at MR = %.2f", mr_cross),
+           color = :grey70, ls = :dot, lw = 1)
+
+    # (b) the same in structural-floor units, which is what the sweep varies.
+    pb = plot(mrs, [critical_structural_floor(rho, p_bar, m) for m in mrs];
+              label = "tolerable floor", color = :black, lw = 2,
+              xlabel = "mass ratio", ylabel = "structural floor kappa, kg/m3",
+              title = "The same limit in structural-floor units", titlefontsize = 10,
+              ylims = (0, 80), legend = :topright, legendfontsize = 7,
+              guidefontsize = 8, tickfontsize = 7)
+    hline!(pb, [kappa0]; label = @sprintf("assumed kappa = %.0f", kappa0),
+           color = :grey40, ls = :dash, lw = 2)
+
+    for (mi, m) in enumerate(eachrow(missions))
+        xs = Float64[]
+        ks = Float64[]
+        for t in eachrow(ntp)
+            mr = mass_ratio(m.delta_v_m_s, exhaust_velocity(t.isp_s))
+            push!(xs, mr)
+            push!(ks, critical_structural_floor(rho, p_bar, mr))
+        end
+        scatter!(pa, xs, fill(f_h2, length(xs)); label = m.name,
+                 color = pal[mi], markershape = shapes[mi], markersize = 6,
+                 markerstrokewidth = 0.5)
+        scatter!(pb, xs, ks; label = m.name,
+                 color = pal[mi], markershape = shapes[mi], markersize = 6,
+                 markerstrokewidth = 0.5)
+    end
+
+    p = plot(pa, pb; layout = (1, 2), size = (1500, 620),
+             left_margin = 10Plots.mm, bottom_margin = 8Plots.mm, top_margin = 4Plots.mm)
+    path = joinpath(outdir, "ntp_tank_floor.png")
     savefig(p, path)
     path
 end
